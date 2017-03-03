@@ -1,5 +1,98 @@
 /* Old Method */
 
+function createArray(length) {
+    var arr = new Array(length || 0),
+        i = length;
+
+    if (arguments.length > 1) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    }
+
+    return arr;
+}
+
+
+function decodeHexFile(str) {
+	var res= [];
+	var eof= false;
+	var segment= 0;
+	var extended= 0;
+
+	function flatten(ary, ret) {
+		ret = ret === undefined ? [] : ret;
+		for (var i = 0; i < ary.length; i++) {
+			if (Array.isArray(ary[i])) {
+				flatten(ary[i], ret);
+			} else {
+				ret.push(ary[i]);
+			}
+		}
+		return ret;
+	}
+
+	function readLine(line, lineIndex) {
+		if(line[0]!==':') { //check start code
+			//console.log('read error: no colon at beginning of line');
+		} else {
+			var byteCount= parseInt(line.substr(1, 2), 16);
+			var address= parseInt(line.substr(3, 4), 16);
+			var recordType= parseInt(line.substr(7, 2), 16);
+			var data= [];
+			switch(recordType) {
+				case 0: //data
+					for(var i= 0; i<byteCount; i++) {
+						data.push(parseInt(line.substr(i*2+9, 2), 16));
+					}
+					break;
+				case 1: //end of file
+					eof= true;
+					break;
+				case 2: //extended segment address
+					segment= parseInt(line.substr(9, 2), 16);
+					break;
+				case 3: //start segment address
+					//console.log('warning: Start Segment Address Record - not implemented');
+					break;
+				case 4: //extended linear address
+					extended= parseInt(line.substr(9, 2), 16);
+					break;
+				case 5: //start linear address
+					//console.log('warning: Start Linear Address Record - not implemented');
+					break;
+				default:
+					//console.log('read error: no matching record type');
+			}
+			var checksum= parseInt(line.substr(byteCount*2+9, 2), 16);
+			var sum= 0;
+			for(var i= 0; i<data.length; i++) {
+				sum= sum+data[i];
+			}
+			if(256-((byteCount+(address%255)+recordType+sum)&255)!=checksum) {
+				//console.log('checksum error in line '+lineIndex);
+				//document.querySelector('#error').innerHTML= 'checksum error in line'+lineIndex;
+			}
+			if(recordType!=1) {
+				var addy= segment*16+address;
+				addy= extended*65536+addy;
+				res.push(data)
+			}
+		}
+	}
+
+	var lines= str.split('\n');
+	for(var i= 0; i<lines.length; i++) {
+		var line= lines[i];
+		if(line.length>0) {
+			readLine(line, i);
+		}
+	}
+	if(!eof) {
+		console.log('read error: no end of file');
+	}
+	return flatten(res);
+}
+
 
 var HexToSignal = function (fullSpeedFlag) {
 
@@ -21,7 +114,7 @@ var HexToSignal = function (fullSpeedFlag) {
 }
 
 HexToSignal.prototype.setSignalSpeed = function (fullSpeedFlag) {
-		if( this.fullSpeedFlag ) this.manchesterNumberOfSamplesPerBit = 4; // full speed
+		if( fullSpeedFlag ) this.manchesterNumberOfSamplesPerBit = 4; // full speed
 		else                this.manchesterNumberOfSamplesPerBit = 8; // half speed
 };
 
@@ -289,28 +382,44 @@ WavCodeGenerator.prototype.setSignalSpeed = function (fullSpeedFlag) {
 };
 
 WavCodeGenerator.prototype.generatePageSignal = function (data) {
-		var h2s=new HexToSignal(fullSpeedFlag);
+		var h2s=new HexToSignal(this.fullSpeedFlag);
+
+
 
 		var frameData=new Array(this.frameSetup.getFrameSize());
 
 		// copy data into frame data
 		for(var n=0;n<this.frameSetup.getPageSize();n++)
 		{
+
+
 			if ( n < data.length ) frameData[n+this.frameSetup.getPageStart()]=data[n];
 			else frameData[n+this.frameSetup.getPageStart()]=0xFF;
 		}
 		this.frameSetup.addFrameParameters(frameData);
-		var signal=h2s.manchesterCoding(frameData);
+
+			printInt(11111111);
+
+		for (var i = 0; i < frameData.length; i++) {
+			printInt(frameData[i]);
+		}
+			printInt(22222222);
+
+		var signal=h2s.manchesterCoding([1,2,3,4,5,6]);
+
+		for (var i = 0; i < signal.length; i++) {
+			printInt(signal[i]);
+		}
 		return signal;
 };
 
 WavCodeGenerator.prototype.silence = function (duration) {
-		var signal=new Array(duration * sampleRate);
+		var signal=new Array(duration * this.sampleRate);
 		return signal;
 };
 
 WavCodeGenerator.prototype.makeRunCommand = function () {
-		var h2s=new HexToSignal(fullSpeedFlag);
+		var h2s=new HexToSignal(this.fullSpeedFlag);
 		var frameData=new Array(this.frameSetup.getFrameSize());
 		this.frameSetup.setRunCommand();
 		this.frameSetup.addFrameParameters(frameData);
@@ -319,7 +428,7 @@ WavCodeGenerator.prototype.makeRunCommand = function () {
 };
 
 WavCodeGenerator.prototype.makeTestCommand = function () {
-		var h2s=new HexToSignal(fullSpeedFlag);
+		var h2s=new HexToSignal(this.fullSpeedFlag);
 		var frameData=new Array(this.frameSetup.getFrameSize());
 		this.frameSetup.setTestCommand();
 		this.frameSetup.addFrameParameters(frameData);
@@ -327,7 +436,7 @@ WavCodeGenerator.prototype.makeTestCommand = function () {
 		return signal;
 };
 
-WavCodeGenerator.prototype.generateSignal = function () {
+WavCodeGenerator.prototype.generateSignal = function (data) {
 		var signal=new Array(1);
 		this.frameSetup.setProgCommand(); // we want to programm the mc
 		var pl=this.frameSetup.getPageSize();
@@ -348,72 +457,98 @@ WavCodeGenerator.prototype.generateSignal = function () {
 				if(n+sigPointer>data.length-1) partSig[n]=0xFF;
 				else partSig[n]=data[n+sigPointer];
 			}
-			
+
 			sigPointer+=pl;
+
+			// for (var i = 0; i < partSig.length; i++) {
+			// 	printInt(partSig[i])
+			// }
+
 			var sig=this.generatePageSignal(partSig);
+
+							
+
 			signal=this.appendSignal(signal,sig);
 			signal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));
 			
 			total-=pl;
 		}
 
-		signal=appendSignal(signal,makeRunCommand()); // send mc "start the application"
+		signal=this.appendSignal(signal,this.makeRunCommand()); // send mc "start the application"
 		// added silence at sound end to time out sound fading in some wav players like from Mircosoft
 		for(var k=0;k<10;k++)
 		{
-			signal=this.appendSignal(signal,silence(frameSetup.getSilenceBetweenPages()));
+			signal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));
 		}
 		return signal;
 };
 
-WavCodeGenerator.prototype.saveWav = function (signal, fileName) {
-// Calculate the number of frames required for specified duration
-			//long numFrames = (long)(duration * sampleRate);
-			var numFrames=signal.length;
-			// Create a wav file with the name specified as the first argument
-			WavFile wavFile = WavFile.newWavFile(fileName, 2, numFrames, 16, sampleRate);
+// WavCodeGenerator.prototype.saveWav = function (signal, fileName) {
+// // Calculate the number of frames required for specified duration
+// 			//long numFrames = (long)(duration * sampleRate);
+// 			var numFrames=signal.length;
+// 			// Create a wav file with the name specified as the first argument
+// 			//WavFile wavFile = WavFile.newWavFile(fileName, 2, numFrames, 16, sampleRate);
 
-			// Create a buffer of 100 frames
-			var buffer = new double[2][100];
+// 			// Create a buffer of 100 frames
+// 			// var buffer = new double[2][100];
+// 			var buffer = createArray(100,2);
 
-			// Initialize a local frame counter
-			var frameCounter = 0;
+// 			// Initialize a local frame counter
+// 			var frameCounter = 0;
 
-			// Loop until all frames written
-			while (frameCounter < numFrames)
-			{
-				// Determine how many frames to write, up to a maximum of the buffer size
-				var remaining = wavFile.getFramesRemaining();
-				var toWrite = (remaining > 100) ? 100 : (int) remaining;
+// 			// Loop until all frames written
+// 			while (frameCounter < numFrames)
+// 			{
+// 				// Determine how many frames to write, up to a maximum of the buffer size
+				
+// 				//todo: var remaining = wavFile.getFramesRemaining();
+// 				var toWrite = (remaining > 100) ? 100 : remaining;
 
-				// Fill the buffer, one tone per channel
-				for (var s=0 ; s<toWrite ; s++, frameCounter++)
-				{
-					if(frameCounter<signal.length)
-					{
-						buffer[0][s] = signal[frameCounter];
-						buffer[1][s] = signal[frameCounter];						
-					}else
-					{
-						buffer[0][s] = sin(2.0 * Math.PI * 400 * frameCounter / sampleRate);
-						buffer[1][s] = sin(2.0 * Math.PI * 500 * frameCounter / sampleRate);
-					}
-				}
-				// Write the buffer
-				wavFile.writeFrames(buffer, toWrite);
-			}
+// 				// Fill the buffer, one tone per channel
+// 				for (var s=0 ; s<toWrite ; s++, frameCounter++)
+// 				{
+// 					if(frameCounter<signal.length)
+// 					{
+// 						buffer[0][s] = signal[frameCounter];
+// 						buffer[1][s] = signal[frameCounter];						
+// 					}else
+// 					{
+// 						buffer[0][s] = Math.sin(2.0 * Math.PI * 400 * frameCounter / this.sampleRate);
+// 						buffer[1][s] = Math.sin(2.0 * Math.PI * 500 * frameCounter / this.sampleRate);
+// 					}
+// 				}
+// 				// Write the buffer
+// 				wavFile.writeFrames(buffer, toWrite);
+// 			}
 
-			// Close the wavFile
-			wavFile.close();
-};
+// 			// Close the wavFile
+// 			wavFile.close();
+// };
 
 WavCodeGenerator.prototype.convertHex2Wav = function () {
-
+		//IntelHexFormat ih=new IntelHexFormat();
+		//byte[] erg = IntelHexFormat.IntelHexFormatToByteArray(hexFile);
+		//IntelHexFormat.anzeigen(erg);
+		//WavCodeGenerator w=new WavCodeGenerator();
+		//double[] signal=generateSignal(IntelHexFormat.toUnsignedIntArray(IntelHexFormat.discardHeaderBytes(erg)));
+		//saveWav(signal,wavFile);
+		return true;
 };
 
-WavCodeGenerator.prototype.test = function () {
 
-};
+var hexdata = [14,192,29,192,28,192,27,192,26,192,49,192,24,192,23,192,22,192,21,192,20,192,19,192,18,192,17,192,16,192,17,36,31,190,207,229,210,224,222,191,205,191,32,224,160,230,176,224,1,192,29,146,169,54,178,7,225,247,4,208,119,192,224,207,8,149,8,149,129,183,129,191,92,208,250,223,250,223,254,207,128,183,128,127,128,191,128,183,128,104,128,191,140,181,128,100,140,189,143,239,141,189,128,183,135,96,128,191,8,149,31,146,15,146,15,182,15,146,17,36,47,147,63,147,143,147,159,147,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147,99,0,176,147,100,0,128,145,101,0,144,145,102,0,160,145,103,0,176,145,104,0,1,150,161,29,177,29,128,147,101,0,144,147,102,0,160,147,103,0,176,147,104,0,191,145,175,145,159,145,143,145,63,145,47,145,15,144,15,190,15,144,31,144,24,149,138,181,130,96,138,189,138,181,129,96,138,189,131,183,136,127,131,96,131,191,120,148,137,183,130,96,137,191,152,223,134,177,136,119,134,104,134,185,55,154,8,149,248,148,255,207];
+var framesample = [2,2,0,48,1,170,85,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147];
 
-var x = new HexToSignal(true);
-x.manchesterCoding([10,11,12])
+var h2s = new HexToSignal(true);
+
+var mad = h2s.manchesterCoding(framesample);
+
+for (var i = 0; i < mad.length; i++) {
+	printInt(mad[i]);
+}
+
+// var wg = new WavCodeGenerator();
+// var signal = wg.generateSignal(hexdata);
+
+
