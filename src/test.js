@@ -33,7 +33,7 @@ function decodeHexFile(str) {
 
 	function readLine(line, lineIndex) {
 		if(line[0]!==':') { //check start code
-			//console.log('read error: no colon at beginning of line');
+			//printInt('read error: no colon at beginning of line');
 		} else {
 			var byteCount= parseInt(line.substr(1, 2), 16);
 			var address= parseInt(line.substr(3, 4), 16);
@@ -52,16 +52,16 @@ function decodeHexFile(str) {
 					segment= parseInt(line.substr(9, 2), 16);
 					break;
 				case 3: //start segment address
-					//console.log('warning: Start Segment Address Record - not implemented');
+					//printInt('warning: Start Segment Address Record - not implemented');
 					break;
 				case 4: //extended linear address
 					extended= parseInt(line.substr(9, 2), 16);
 					break;
 				case 5: //start linear address
-					//console.log('warning: Start Linear Address Record - not implemented');
+					//printInt('warning: Start Linear Address Record - not implemented');
 					break;
 				default:
-					//console.log('read error: no matching record type');
+					//printInt('read error: no matching record type');
 			}
 			var checksum= parseInt(line.substr(byteCount*2+9, 2), 16);
 			var sum= 0;
@@ -69,7 +69,7 @@ function decodeHexFile(str) {
 				sum= sum+data[i];
 			}
 			if(256-((byteCount+(address%255)+recordType+sum)&255)!=checksum) {
-				//console.log('checksum error in line '+lineIndex);
+				//printInt('checksum error in line '+lineIndex);
 				//document.querySelector('#error').innerHTML= 'checksum error in line'+lineIndex;
 			}
 			if(recordType!=1) {
@@ -88,7 +88,7 @@ function decodeHexFile(str) {
 		}
 	}
 	if(!eof) {
-		console.log('read error: no end of file');
+		printInt('read error: no end of file');
 	}
 	return flatten(res);
 }
@@ -383,38 +383,35 @@ WavCodeGenerator.prototype.setSignalSpeed = function (fullSpeedFlag) {
 
 WavCodeGenerator.prototype.generatePageSignal = function (data) {
 		var h2s=new HexToSignal(this.fullSpeedFlag);
-
-
-
 		var frameData=new Array(this.frameSetup.getFrameSize());
 
 		// copy data into frame data
 		for(var n=0;n<this.frameSetup.getPageSize();n++)
 		{
-
-
 			if ( n < data.length ) frameData[n+this.frameSetup.getPageStart()]=data[n];
 			else frameData[n+this.frameSetup.getPageStart()]=0xFF;
 		}
+		
 		this.frameSetup.addFrameParameters(frameData);
 
-			printInt(11111111);
+//		for (var i = 0; i < frameData.length; i++) {
+//			printInt(frameData[i]);
+//		}
 
-		for (var i = 0; i < frameData.length; i++) {
-			printInt(frameData[i]);
-		}
-			printInt(22222222);
+		var signal=h2s.manchesterCoding(frameData);
 
-		var signal=h2s.manchesterCoding([1,2,3,4,5,6]);
+//		for (var i = 0; i < signal.length; i++) {
+//			printInt(signal[i]);
+//		}
 
-		for (var i = 0; i < signal.length; i++) {
-			printInt(signal[i]);
-		}
 		return signal;
 };
 
 WavCodeGenerator.prototype.silence = function (duration) {
 		var signal=new Array(duration * this.sampleRate);
+		for (var i = 0; i < signal.length; i++) {
+			signal[i] = 0;
+		}
 		return signal;
 };
 
@@ -437,13 +434,14 @@ WavCodeGenerator.prototype.makeTestCommand = function () {
 };
 
 WavCodeGenerator.prototype.generateSignal = function (data) {
-		var signal=new Array(1);
+		var signal= [];
 		this.frameSetup.setProgCommand(); // we want to programm the mc
 		var pl=this.frameSetup.getPageSize();
 		var total=data.length;
 		var sigPointer=0;
 		var pagePointer=0;
-
+		
+		printInt(total);
 
 		while(total>0)
 		{
@@ -460,26 +458,35 @@ WavCodeGenerator.prototype.generateSignal = function (data) {
 
 			sigPointer+=pl;
 
-			// for (var i = 0; i < partSig.length; i++) {
-			// 	printInt(partSig[i])
-			// }
-
 			var sig=this.generatePageSignal(partSig);
-
-							
-
+						
 			signal=this.appendSignal(signal,sig);
 			signal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));
 			
+			printInt(signal.length)
+
+			for (var i = 0; i < signal.length; i++) {
+				//printInt(signal[i])
+			}
+			
 			total-=pl;
 		}
+		printInt(total)
 
+		//printInt(signal.length);
+		
 		signal=this.appendSignal(signal,this.makeRunCommand()); // send mc "start the application"
 		// added silence at sound end to time out sound fading in some wav players like from Mircosoft
+		
+		printInt(signal.length)
+
 		for(var k=0;k<10;k++)
 		{
 			signal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));
 		}
+		
+printInt(signal.length)
+		
 		return signal;
 };
 
@@ -540,15 +547,12 @@ WavCodeGenerator.prototype.convertHex2Wav = function () {
 var hexdata = [14,192,29,192,28,192,27,192,26,192,49,192,24,192,23,192,22,192,21,192,20,192,19,192,18,192,17,192,16,192,17,36,31,190,207,229,210,224,222,191,205,191,32,224,160,230,176,224,1,192,29,146,169,54,178,7,225,247,4,208,119,192,224,207,8,149,8,149,129,183,129,191,92,208,250,223,250,223,254,207,128,183,128,127,128,191,128,183,128,104,128,191,140,181,128,100,140,189,143,239,141,189,128,183,135,96,128,191,8,149,31,146,15,146,15,182,15,146,17,36,47,147,63,147,143,147,159,147,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147,99,0,176,147,100,0,128,145,101,0,144,145,102,0,160,145,103,0,176,145,104,0,1,150,161,29,177,29,128,147,101,0,144,147,102,0,160,147,103,0,176,147,104,0,191,145,175,145,159,145,143,145,63,145,47,145,15,144,15,190,15,144,31,144,24,149,138,181,130,96,138,189,138,181,129,96,138,189,131,183,136,127,131,96,131,191,120,148,137,183,130,96,137,191,152,223,134,177,136,119,134,104,134,185,55,154,8,149,248,148,255,207];
 var framesample = [2,2,0,48,1,170,85,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147];
 
-var h2s = new HexToSignal(true);
-
-var mad = h2s.manchesterCoding(framesample);
-
-for (var i = 0; i < mad.length; i++) {
-	printInt(mad[i]);
-}
-
-// var wg = new WavCodeGenerator();
-// var signal = wg.generateSignal(hexdata);
-
-
+//var h2s = new HexToSignal(true);
+//var mad = h2s.manchesterCoding(framesample);
+//
+//for (var i = 0; i < mad.length; i++) {
+//	printInt(mad[i]);
+//}
+//
+ var wg = new WavCodeGenerator();
+ var signal = wg.generateSignal(hexdata);

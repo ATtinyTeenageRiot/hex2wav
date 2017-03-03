@@ -1,54 +1,677 @@
 #include <iostream>
 #include <stdio.h>
 #include <string.h>
-#include "v7.h"
+#include "duktape.h"
+#include "duk_console.h"
+#include <errno.h>
 
+const char js_file[] =
+        "/* Old Method */\n"
+                          "\n"
+                          "function createArray(length) {\n"
+                          "    var arr = new Array(length || 0),\n"
+                          "        i = length;\n"
+                          "\n"
+                          "    if (arguments.length > 1) {\n"
+                          "        var args = Array.prototype.slice.call(arguments, 1);\n"
+                          "        while(i--) arr[length-1 - i] = createArray.apply(this, args);\n"
+                          "    }\n"
+                          "\n"
+                          "    return arr;\n"
+                          "}\n"
+                          "\n"
+                          "\n"
+                          "function decodeHexFile(str) {\n"
+                          "\tvar res= [];\n"
+                          "\tvar eof= false;\n"
+                          "\tvar segment= 0;\n"
+                          "\tvar extended= 0;\n"
+                          "\n"
+                          "\tfunction flatten(ary, ret) {\n"
+                          "\t\tret = ret === undefined ? [] : ret;\n"
+                          "\t\tfor (var i = 0; i < ary.length; i++) {\n"
+                          "\t\t\tif (Array.isArray(ary[i])) {\n"
+                          "\t\t\t\tflatten(ary[i], ret);\n"
+                          "\t\t\t} else {\n"
+                          "\t\t\t\tret.push(ary[i]);\n"
+                          "\t\t\t}\n"
+                          "\t\t}\n"
+                          "\t\treturn ret;\n"
+                          "\t}\n"
+                          "\n"
+                          "\tfunction readLine(line, lineIndex) {\n"
+                          "\t\tif(line[0]!==':') { //check start code\n"
+                          "\t\t\t//console.log('read error: no colon at beginning of line');\n"
+                          "\t\t} else {\n"
+                          "\t\t\tvar byteCount= parseInt(line.substr(1, 2), 16);\n"
+                          "\t\t\tvar address= parseInt(line.substr(3, 4), 16);\n"
+                          "\t\t\tvar recordType= parseInt(line.substr(7, 2), 16);\n"
+                          "\t\t\tvar data= [];\n"
+                          "\t\t\tswitch(recordType) {\n"
+                          "\t\t\t\tcase 0: //data\n"
+                          "\t\t\t\t\tfor(var i= 0; i<byteCount; i++) {\n"
+                          "\t\t\t\t\t\tdata.push(parseInt(line.substr(i*2+9, 2), 16));\n"
+                          "\t\t\t\t\t}\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tcase 1: //end of file\n"
+                          "\t\t\t\t\teof= true;\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tcase 2: //extended segment address\n"
+                          "\t\t\t\t\tsegment= parseInt(line.substr(9, 2), 16);\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tcase 3: //start segment address\n"
+                          "\t\t\t\t\t//console.log('warning: Start Segment Address Record - not implemented');\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tcase 4: //extended linear address\n"
+                          "\t\t\t\t\textended= parseInt(line.substr(9, 2), 16);\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tcase 5: //start linear address\n"
+                          "\t\t\t\t\t//console.log('warning: Start Linear Address Record - not implemented');\n"
+                          "\t\t\t\t\tbreak;\n"
+                          "\t\t\t\tdefault:\n"
+                          "\t\t\t\t\t//console.log('read error: no matching record type');\n"
+                          "\t\t\t}\n"
+                          "\t\t\tvar checksum= parseInt(line.substr(byteCount*2+9, 2), 16);\n"
+                          "\t\t\tvar sum= 0;\n"
+                          "\t\t\tfor(var i= 0; i<data.length; i++) {\n"
+                          "\t\t\t\tsum= sum+data[i];\n"
+                          "\t\t\t}\n"
+                          "\t\t\tif(256-((byteCount+(address%255)+recordType+sum)&255)!=checksum) {\n"
+                          "\t\t\t\t//console.log('checksum error in line '+lineIndex);\n"
+                          "\t\t\t\t//document.querySelector('#error').innerHTML= 'checksum error in line'+lineIndex;\n"
+                          "\t\t\t}\n"
+                          "\t\t\tif(recordType!=1) {\n"
+                          "\t\t\t\tvar addy= segment*16+address;\n"
+                          "\t\t\t\taddy= extended*65536+addy;\n"
+                          "\t\t\t\tres.push(data)\n"
+                          "\t\t\t}\n"
+                          "\t\t}\n"
+                          "\t}\n"
+                          "\n"
+                          "\tvar lines= str.split('\\n');\n"
+                          "\tfor(var i= 0; i<lines.length; i++) {\n"
+                          "\t\tvar line= lines[i];\n"
+                          "\t\tif(line.length>0) {\n"
+                          "\t\t\treadLine(line, i);\n"
+                          "\t\t}\n"
+                          "\t}\n"
+                          "\tif(!eof) {\n"
+                          "\t\tconsole.log('read error: no end of file');\n"
+                          "\t}\n"
+                          "\treturn flatten(res);\n"
+                          "}\n"
+                          "\n"
+                          "\n"
+                          "var HexToSignal = function (fullSpeedFlag) {\n"
+                          "\n"
+                          "\tthis.startSequencePulses = 40;\n"
+                          "\tthis.numStartBits        =  1;\n"
+                          "\tthis.numStopBits         =  1;\n"
+                          "\tthis.manchesterPhase     =  1;    // double / current phase for differential manchester coding\n"
+                          "\n"
+                          "\tthis.invertSignal        =  true; // correction of an inverted audio signal line\n"
+                          "\t\n"
+                          "\tthis.lowNumberOfPulses   =  2; // not for manchester coding, only for flankensignal\n"
+                          "\tthis.highNumberOfPulses  =  3; // not for manchester coding, only for flankensignal\n"
+                          "\t\n"
+                          "\tthis.manchesterNumberOfSamplesPerBit = 4; // this value must be even\n"
+                          "\tthis.useDifferentialManchsterCode = true;\n"
+                          "\n"
+                          "\tthis.setSignalSpeed(fullSpeedFlag);\n"
+                          "\t\n"
+                          "}\n"
+                          "\n"
+                          "HexToSignal.prototype.setSignalSpeed = function (fullSpeedFlag) {\n"
+                          "\t\tif( fullSpeedFlag ) this.manchesterNumberOfSamplesPerBit = 4; // full speed\n"
+                          "\t\telse                this.manchesterNumberOfSamplesPerBit = 8; // half speed\n"
+                          "};\n"
+                          "\n"
+                          "HexToSignal.prototype.manchesterEdge = function (flag, pointerIntoSignal, signal) {\n"
+                          "\n"
+                          "\n"
+                          "\t\tvar sigpart = [];\n"
+                          "\t\tvar n = 0;\n"
+                          "\t\tvar value = 0;\n"
+                          "\n"
+                          "\t\tif( !this.useDifferentialManchsterCode ) // non differential manchester code\n"
+                          "\t\t{\n"
+                          "\t\t\tif(flag) value=1;\n"
+                          "\t\t\telse value=-1;\n"
+                          "\t\t\tif(this.invertSignal)value=value*-1;  // correction of an inverted audio signal line\n"
+                          "\t\t\tfor(n=0;n<this.manchesterNumberOfSamplesPerBit;n++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tif(n<this.manchesterNumberOfSamplesPerBit/2)signal[pointerIntoSignal]=-value;\n"
+                          "\t\t\t\telse signal[pointerIntoSignal]=value;\n"
+                          "\t\t\t\tpointerIntoSignal++;\n"
+                          "\t\t\t}\n"
+                          "\t\t}\n"
+                          "\t\telse // differential manchester code ( inverted )\n"
+                          "\t\t{\n"
+                          "\t\t\tif(flag) this.manchesterPhase=-this.manchesterPhase; // toggle phase\n"
+                          "\t\t\tfor(n=0;n<this.manchesterNumberOfSamplesPerBit;n++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tif(n==(this.manchesterNumberOfSamplesPerBit/2))this.manchesterPhase=-this.manchesterPhase; // toggle phase\n"
+                          "\t\t\t\tsignal[pointerIntoSignal]=this.manchesterPhase;\n"
+                          "\t\t\t\tpointerIntoSignal++;\n"
+                          "\t\t\t}\t\t\n"
+                          "\t\t}\n"
+                          "\t\treturn sigpart;\n"
+                          "\n"
+                          "};\n"
+                          "\n"
+                          "HexToSignal.prototype.manchesterCoding = function (hexdata) {\n"
+                          "\tvar laenge = hexdata.length;\n"
+                          "\tvar signal= new Array((1+this.startSequencePulses+laenge*8)*this.manchesterNumberOfSamplesPerBit);\n"
+                          "\tvar counter = 0;\n"
+                          "\n"
+                          "\tfor (var n = 0; n < this.startSequencePulses; n++) {\n"
+                          "\t\t\tthis.manchesterEdge(false,counter,signal); // 0 bits: generate falling edges \n"
+                          "\t\t\tcounter+=this.manchesterNumberOfSamplesPerBit;\n"
+                          "\t}\n"
+                          "\n"
+                          "\tthis.manchesterEdge(true,counter,signal); //  1 bit:  rising edge \n"
+                          "\tcounter+=this.manchesterNumberOfSamplesPerBit;\n"
+                          "\t\t\n"
+                          "\t/** create data signal **/\n"
+                          "\tvar count=0;\n"
+                          "\tfor(count=0;count<hexdata.length;count++)\n"
+                          "\t{\n"
+                          "\t\tvar dat=hexdata[count];\n"
+                          "\t\t//System.out.println(dat);\n"
+                          "\t\t/** create one byte **/\t\t\t\n"
+                          "\t\tfor( var n=0;n<8;n++) // first bit to send: MSB\n"
+                          "\t\t{\n"
+                          "\t\t\tif((dat&0x80)==0) \tthis.manchesterEdge(false,counter,signal); // generate falling edges ( 0 bits )\n"
+                          "\t\t\telse \t\t\t\tthis.manchesterEdge(true,counter,signal); // rising edge ( 1 bit )\n"
+                          "\t\t\tcounter+=this.manchesterNumberOfSamplesPerBit;\t\n"
+                          "\t\t\tdat=dat<<1; // shift to next bit\n"
+                          "\t\t}\n"
+                          "\t}\n"
+                          "\treturn signal;\t\n"
+                          "\n"
+                          "\n"
+                          "}\n"
+                          "\n"
+                          "HexToSignal.prototype.flankensignal = function (hexdata) {\n"
+                          "\n"
+                          "\tvar intro=this.startSequencePulses*this.lowNumberOfPulses+this.numStartBits*this.highNumberOfPulses+this.numStopBits*this.lowNumberOfPulses;\n"
+                          "\tvar laenge=hexdata.length;\n"
+                          "\tvar signal=new Array(intro+laenge*8*this.highNumberOfPulses);\n"
+                          "\t\n"
+                          "\tvar sigState=-1;\n"
+                          "\tvar counter=0;\n"
+                          "\n"
+                          "\t\t/** generate start sequence **/\n"
+                          "\t\tvar numOfPulses=this.lowNumberOfPulses;\n"
+                          "\t\tfor (var n=0; n<this.startSequencePulses; n++)\n"
+                          "\t\t{\n"
+                          "\t\t\tfor(var k=0;k<numOfPulses;k++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tsignal[counter++]=sigState;\n"
+                          "\t\t\t}\n"
+                          "\t\t\tsigState*=-1;\n"
+                          "\t\t}\n"
+                          "\n"
+                          "\t\t/** start: create 2 high-Bits **/\n"
+                          "\t\tnumOfPulses=this.highNumberOfPulses;\n"
+                          "\t\tfor (var n=0; n<this.numStartBits; n++)\n"
+                          "\t\t{\n"
+                          "\t\t\tfor(var k=0;k<this.numOfPulses;k++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tsignal[counter++]=sigState;\n"
+                          "\t\t\t}\n"
+                          "\t\t\tsigState*=-1;\n"
+                          "\t\t}\n"
+                          "\n"
+                          "\t\t/** create data signal **/\n"
+                          "\t\tvar count=0;\n"
+                          "\t\tfor(count=0;count<hexdata.length;count++)\n"
+                          "\t\t{\n"
+                          "\t\t\tvar dat=hexdata[count];\n"
+                          "\t\t\t/** create one byte **/\t\t\t\n"
+                          "\t\t\tfor( var n=0;n<8;n++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tif((dat&0x80)==0)numOfPulses=this.lowNumberOfPulses;\n"
+                          "\t\t\t\telse numOfPulses=this.highNumberOfPulses;\n"
+                          "\t\t\t\tdat=dat<<1; // shift to next bit\t\t\t\t\n"
+                          "\t\t\t\tfor(var k=0;k<numOfPulses;k++)\n"
+                          "\t\t\t\t{\n"
+                          "\t\t\t\t\tsignal[counter++]=sigState;\n"
+                          "\t\t\t\t}\n"
+                          "\t\t\t\tsigState*=-1;\n"
+                          "\t\t\t}\n"
+                          "\t\t}\n"
+                          "\n"
+                          "\t\t/** stop: create 1 low-Bit **/\n"
+                          "\t\tnumOfPulses=this.lowNumberOfPulses;\n"
+                          "\t\tfor (var n=0; n<this.numStopBits; n++)\n"
+                          "\t\t{\n"
+                          "\t\t\tfor(var k=0;k<numOfPulses;k++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tsignal[counter++]=sigState;\n"
+                          "\t\t\t}\n"
+                          "\t\t\tsigState*=-1;\n"
+                          "\t\t}\n"
+                          "\n"
+                          "\t\t/** cut to long signal */\n"
+                          "\t\tvar sig2=new Array(counter);\n"
+                          "\t\tfor(var n=0;n<sig2.length;n++) sig2[n]=signal[n];\n"
+                          "\t\treturn sig2;\n"
+                          "\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "var BootFrame = function () {\n"
+                          "\n"
+                          "this.command=0;\n"
+                          "this.pageIndex=4;\n"
+                          "this.totalLength=0;\n"
+                          "this.crc=0x55AA;\n"
+                          "this.pageStart = 7;\n"
+                          "this.pageSize  = 64;\n"
+                          "this.frameSize = this.pageStart + this.pageSize;\n"
+                          "this.silenceBetweenPages=0.02;\n"
+                          "\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setProgCommand = function () {\n"
+                          "\tthis.command=2;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "BootFrame.prototype.setRunCommand = function () {\n"
+                          "\tthis.command=3;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "BootFrame.prototype.setTestCommand = function () {\n"
+                          "\tthis.command=1;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "BootFrame.prototype.addFrameParameters = function (data) {\n"
+                          "\t\tdata[0]=this.command;\n"
+                          "\t\tdata[1]=this.pageIndex&0xFF;\n"
+                          "\t\tdata[2]=(this.pageIndex>>8)&0xFF;\n"
+                          "\n"
+                          "\t\tdata[3]=this.totalLength&0xFF;\n"
+                          "\t\tdata[4]=(this.totalLength>>8)&0xFF;\n"
+                          "\n"
+                          "\t\tdata[5]=this.crc&0xFF;\n"
+                          "\t\tdata[6]=(this.crc>>8)&0xFF;\t\t\n"
+                          "\t\treturn data;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "BootFrame.prototype.setFrameSize = function (frameSize) {\n"
+                          "\t\tthis.frameSize = frameSize;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getFrameSize = function () {\n"
+                          "\t\treturn this.frameSize;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setCommand = function (command) {\n"
+                          "\t\tthis.command = command;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getCommand = function () {\n"
+                          "\t\treturn this.command;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setPageIndex = function (pageIndex) {\n"
+                          "\tthis.pageIndex = pageIndex;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getPageIndex = function () {\n"
+                          "\treturn this.pageIndex;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setTotalLength = function (totalLength) {\n"
+                          "\tthis.totalLength = totalLength;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getTotalLength = function () {\n"
+                          "\treturn this.totalLength;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setCrc = function (crc) {\n"
+                          "\tthis.crc = crc;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getCrc = function () {\n"
+                          "\treturn this.crc;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setPageStart = function (pageStart) {\n"
+                          "\tthis.pageStart = pageStart;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getPageStart = function () {\n"
+                          "\treturn this.pageStart;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setPageSize = function (pageSize) {\n"
+                          "\tthis.pageSize = pageSize;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getPageSize = function () {\n"
+                          "\treturn this.pageSize;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.setSilenceBetweenPages = function (silenceBetweenPages) {\n"
+                          "\tthis.silenceBetweenPages = silenceBetweenPages;\n"
+                          "};\n"
+                          "\n"
+                          "BootFrame.prototype.getSilenceBetweenPages = function () {\n"
+                          "\treturn this.silenceBetweenPages;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "\n"
+                          "var WavCodeGenerator = function () {\n"
+                          "\tthis.sampleRate = 44100;\t\t// Samples per second\n"
+                          "\tthis.fullSpeedFlag=true;\n"
+                          "\n"
+                          "\tthis.frameSetup = new BootFrame();\n"
+                          "}\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.appendSignal = function (sig1,  sig2) {\n"
+                          "\tvar l1=sig1.length;\n"
+                          "\tvar l2=sig2.length;\n"
+                          "\tvar d=new Array(l1+l2);\n"
+                          "\tfor(var n=0;n<l1;n++) d[n]=sig1[n];\n"
+                          "\tfor(var n=0;n<l2;n++) d[n+l1]=sig2[n];\t\t\n"
+                          "\treturn d;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.setSignalSpeed = function (fullSpeedFlag) {\n"
+                          "\tthis.fullSpeedFlag = fullSpeedFlag;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.generatePageSignal = function (data) {\n"
+                          "\t\tvar h2s=new HexToSignal(this.fullSpeedFlag);\n"
+                          "\t\tvar frameData=new Array(this.frameSetup.getFrameSize());\n"
+                          "\n"
+                          "\t\t// copy data into frame data\n"
+                          "\t\tfor(var n=0;n<this.frameSetup.getPageSize();n++)\n"
+                          "\t\t{\n"
+                          "\t\t\tif ( n < data.length ) frameData[n+this.frameSetup.getPageStart()]=data[n];\n"
+                          "\t\t\telse frameData[n+this.frameSetup.getPageStart()]=0xFF;\n"
+                          "\t\t}\n"
+                          "\t\t\n"
+                          "\t\tthis.frameSetup.addFrameParameters(frameData);\n"
+                          "\n"
+                          "//\t\tfor (var i = 0; i < frameData.length; i++) {\n"
+                          "//\t\t\tconsole.log(frameData[i]);\n"
+                          "//\t\t}\n"
+                          "\n"
+                          "\t\tvar signal=h2s.manchesterCoding(frameData);\n"
+                          "\n"
+                          "//\t\tfor (var i = 0; i < signal.length; i++) {\n"
+                          "//\t\t\tconsole.log(signal[i]);\n"
+                          "//\t\t}\n"
+                          "\n"
+                          "\t\treturn signal;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.silence = function (duration) {\n"
+                          "\t\tvar signal=new Array(duration * this.sampleRate);\n"
+                          "\t\tfor (var i = 0; i < signal.length; i++) {\n"
+                          "\t\t\tsignal[i] = 0;\n"
+                          "\t\t}\n"
+                          "\t\treturn signal;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.makeRunCommand = function () {\n"
+                          "\t\tvar h2s=new HexToSignal(this.fullSpeedFlag);\n"
+                          "\t\tvar frameData=new Array(this.frameSetup.getFrameSize());\n"
+                          "\t\tthis.frameSetup.setRunCommand();\n"
+                          "\t\tthis.frameSetup.addFrameParameters(frameData);\n"
+                          "\t\tvar signal=h2s.manchesterCoding(frameData);\n"
+                          "\t\treturn signal;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.makeTestCommand = function () {\n"
+                          "\t\tvar h2s=new HexToSignal(this.fullSpeedFlag);\n"
+                          "\t\tvar frameData=new Array(this.frameSetup.getFrameSize());\n"
+                          "\t\tthis.frameSetup.setTestCommand();\n"
+                          "\t\tthis.frameSetup.addFrameParameters(frameData);\n"
+                          "\t\tvar signal=h2s.manchesterCoding(frameData);\n"
+                          "\t\treturn signal;\n"
+                          "};\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.generateSignal = function (data) {\n"
+                          "\t\tvar signal= [];\n"
+                          "\t\tthis.frameSetup.setProgCommand(); // we want to programm the mc\n"
+                          "\t\tvar pl=this.frameSetup.getPageSize();\n"
+                          "\t\tvar total=data.length;\n"
+                          "\t\tvar sigPointer=0;\n"
+                          "\t\tvar pagePointer=0;\n"
+                          "\t\t\n"
+                          "\t\tconsole.log('total', total);\n"
+                          "\n"
+                          "\t\twhile(total>0)\n"
+                          "\t\t{\n"
+                          "\t\t\tthis.frameSetup.setPageIndex(pagePointer++);\n"
+                          "\t\t\tthis.frameSetup.setTotalLength(data.length);\n"
+                          "\n"
+                          "\t\t\tvar partSig=new Array(pl);\n"
+                          "\t\t\t\n"
+                          "\t\t\tfor(var n=0;n<pl;n++)\n"
+                          "\t\t\t{\n"
+                          "\t\t\t\tif(n+sigPointer>data.length-1) partSig[n]=0xFF;\n"
+                          "\t\t\t\telse partSig[n]=data[n+sigPointer];\n"
+                          "\t\t\t}\n"
+                          "\n"
+                          "\t\t\tsigPointer+=pl;\n"
+                          "\n"
+                          "\t\t\tvar sig=this.generatePageSignal(partSig);\n"
+                          "\t\t\t\t\t\t\n"
+                          "\t\t\tsignal=this.appendSignal(signal,sig);\n"
+                          "\t\t\tsignal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));\n"
+                          "\t\t\tconsole.log('siglen',signal.length)\n"
+                          "\t\t\tfor (var i = 0; i < signal.length; i++) {\n"
+                          "\t\t\t\t//console.log(signal[i])\n"
+                          "\t\t\t}\n"
+                          "\t\t\t\n"
+                          "\t\t\ttotal-=pl;\n"
+                          "\t\t}\n"
+                          "\t\tconsole.log('total',total)\n"
+                          "\n"
+                          "\t\t//console.log(signal.length);\n"
+                          "\t\t\n"
+                          "\t\tsignal=this.appendSignal(signal,this.makeRunCommand()); // send mc \"start the application\"\n"
+                          "\t\t// added silence at sound end to time out sound fading in some wav players like from Mircosoft\n"
+                          "\t\t\n"
+                          "\t\tconsole.log('siglen',signal.length)\n"
+                          "\n"
+                          "\t\tfor(var k=0;k<10;k++)\n"
+                          "\t\t{\n"
+                          "\t\t\tsignal=this.appendSignal(signal,this.silence(this.frameSetup.getSilenceBetweenPages()));\n"
+                          "\t\t}\n"
+                          "\t\t\n"
+                          "console.log('siglen end',signal.length)\n"
+                          "\t\t\n"
+                          "\t\treturn signal;\n"
+                          "};\n"
+                          "\n"
+                          "// WavCodeGenerator.prototype.saveWav = function (signal, fileName) {\n"
+                          "// // Calculate the number of frames required for specified duration\n"
+                          "// \t\t\t//long numFrames = (long)(duration * sampleRate);\n"
+                          "// \t\t\tvar numFrames=signal.length;\n"
+                          "// \t\t\t// Create a wav file with the name specified as the first argument\n"
+                          "// \t\t\t//WavFile wavFile = WavFile.newWavFile(fileName, 2, numFrames, 16, sampleRate);\n"
+                          "\n"
+                          "// \t\t\t// Create a buffer of 100 frames\n"
+                          "// \t\t\t// var buffer = new double[2][100];\n"
+                          "// \t\t\tvar buffer = createArray(100,2);\n"
+                          "\n"
+                          "// \t\t\t// Initialize a local frame counter\n"
+                          "// \t\t\tvar frameCounter = 0;\n"
+                          "\n"
+                          "// \t\t\t// Loop until all frames written\n"
+                          "// \t\t\twhile (frameCounter < numFrames)\n"
+                          "// \t\t\t{\n"
+                          "// \t\t\t\t// Determine how many frames to write, up to a maximum of the buffer size\n"
+                          "\t\t\t\t\n"
+                          "// \t\t\t\t//todo: var remaining = wavFile.getFramesRemaining();\n"
+                          "// \t\t\t\tvar toWrite = (remaining > 100) ? 100 : remaining;\n"
+                          "\n"
+                          "// \t\t\t\t// Fill the buffer, one tone per channel\n"
+                          "// \t\t\t\tfor (var s=0 ; s<toWrite ; s++, frameCounter++)\n"
+                          "// \t\t\t\t{\n"
+                          "// \t\t\t\t\tif(frameCounter<signal.length)\n"
+                          "// \t\t\t\t\t{\n"
+                          "// \t\t\t\t\t\tbuffer[0][s] = signal[frameCounter];\n"
+                          "// \t\t\t\t\t\tbuffer[1][s] = signal[frameCounter];\t\t\t\t\t\t\n"
+                          "// \t\t\t\t\t}else\n"
+                          "// \t\t\t\t\t{\n"
+                          "// \t\t\t\t\t\tbuffer[0][s] = Math.sin(2.0 * Math.PI * 400 * frameCounter / this.sampleRate);\n"
+                          "// \t\t\t\t\t\tbuffer[1][s] = Math.sin(2.0 * Math.PI * 500 * frameCounter / this.sampleRate);\n"
+                          "// \t\t\t\t\t}\n"
+                          "// \t\t\t\t}\n"
+                          "// \t\t\t\t// Write the buffer\n"
+                          "// \t\t\t\twavFile.writeFrames(buffer, toWrite);\n"
+                          "// \t\t\t}\n"
+                          "\n"
+                          "// \t\t\t// Close the wavFile\n"
+                          "// \t\t\twavFile.close();\n"
+                          "// };\n"
+                          "\n"
+                          "WavCodeGenerator.prototype.convertHex2Wav = function () {\n"
+                          "\t\t//IntelHexFormat ih=new IntelHexFormat();\n"
+                          "\t\t//byte[] erg = IntelHexFormat.IntelHexFormatToByteArray(hexFile);\n"
+                          "\t\t//IntelHexFormat.anzeigen(erg);\n"
+                          "\t\t//WavCodeGenerator w=new WavCodeGenerator();\n"
+                          "\t\t//double[] signal=generateSignal(IntelHexFormat.toUnsignedIntArray(IntelHexFormat.discardHeaderBytes(erg)));\n"
+                          "\t\t//saveWav(signal,wavFile);\n"
+                          "\t\treturn true;\n"
+                          "};\n"
+                          "\n"
+                          "\n"
+                          "var hexdata = [14,192,29,192,28,192,27,192,26,192,49,192,24,192,23,192,22,192,21,192,20,192,19,192,18,192,17,192,16,192,17,36,31,190,207,229,210,224,222,191,205,191,32,224,160,230,176,224,1,192,29,146,169,54,178,7,225,247,4,208,119,192,224,207,8,149,8,149,129,183,129,191,92,208,250,223,250,223,254,207,128,183,128,127,128,191,128,183,128,104,128,191,140,181,128,100,140,189,143,239,141,189,128,183,135,96,128,191,8,149,31,146,15,146,15,182,15,146,17,36,47,147,63,147,143,147,159,147,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147,99,0,176,147,100,0,128,145,101,0,144,145,102,0,160,145,103,0,176,145,104,0,1,150,161,29,177,29,128,147,101,0,144,147,102,0,160,147,103,0,176,147,104,0,191,145,175,145,159,145,143,145,63,145,47,145,15,144,15,190,15,144,31,144,24,149,138,181,130,96,138,189,138,181,129,96,138,189,131,183,136,127,131,96,131,191,120,148,137,183,130,96,137,191,152,223,134,177,136,119,134,104,134,185,55,154,8,149,248,148,255,207];\n"
+                          "var framesample = [2,2,0,48,1,170,85,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147];\n"
+                          "\n"
+                          "//var h2s = new HexToSignal(true);\n"
+                          "//var mad = h2s.manchesterCoding(framesample);\n"
+                          "//\n"
+                          "//for (var i = 0; i < mad.length; i++) {\n"
+                          "//\tconsole.log(mad[i]);\n"
+                          "//}\n"
+                          "//\n"
+                          " var wg = new WavCodeGenerator();\n"
+                          " var signal = wg.generateSignal(hexdata);\n"
+                          "\n"
+                          "console.log(signal)\n"
+                           "console.log(new TextDecoder().decode(readFile(\"test.txt\")))"
+                          "//\n"
+                          "";
 
-class Test {
-public:
-    Test()
-    {
-        std::cout << "hello\n";
+//#if defined(DUK_CMDLINE_FILEIO)
+static duk_ret_t fileio_read_file(duk_context *ctx) {
+    const char *fn;
+    char *buf;
+    size_t len;
+    size_t off;
+    int rc;
+    FILE *f;
+
+    fn = duk_require_string(ctx, 0);
+    f = fopen(fn, "rb");
+    if (!f) {
+        duk_error(ctx, DUK_ERR_TYPE_ERROR, "cannot open file %s for reading, errno %ld: %s",
+                  fn, (long) errno, strerror(errno));
     }
 
-    void ok()
-    {
-        std::cout << "hello\n";
-
+    rc = fseek(f, 0, SEEK_END);
+    if (rc < 0) {
+        (void) fclose(f);
+        duk_error(ctx, DUK_ERR_TYPE_ERROR, "fseek() failed for %s, errno %ld: %s",
+                  fn, (long) errno, strerror(errno));
     }
-};
+    len = (size_t) ftell(f);
+    rc = fseek(f, 0, SEEK_SET);
+    if (rc < 0) {
+        (void) fclose(f);
+        duk_error(ctx, DUK_ERR_TYPE_ERROR, "fseek() failed for %s, errno %ld: %s",
+                  fn, (long) errno, strerror(errno));
+    }
 
-static double sum(double a, double b) {
-  return a + b;
+    buf = (char *) duk_push_fixed_buffer(ctx, (duk_size_t) len);
+    for (off = 0; off < len;) {
+        size_t got;
+        got = fread((void *) (buf + off), 1, len - off, f);
+        if (ferror(f)) {
+            (void) fclose(f);
+            duk_error(ctx, DUK_ERR_TYPE_ERROR, "error while reading %s", fn);
+        }
+        if (got == 0) {
+            if (feof(f)) {
+                break;
+            } else {
+                (void) fclose(f);
+                duk_error(ctx, DUK_ERR_TYPE_ERROR, "error while reading %s", fn);
+            }
+        }
+        off += got;
+    }
+
+    if (f) {
+        (void) fclose(f);
+    }
+
+    return 1;
 }
 
-static enum v7_err js_sum(struct v7 *v7, v7_val_t *res) {
-  double arg0 = v7_get_double(v7, v7_arg(v7, 0));
-  double arg1 = v7_get_double(v7, v7_arg(v7, 1));
-  double result = sum(arg0, arg1);
+static duk_ret_t fileio_write_file(duk_context *ctx) {
+    const char *fn;
+    const char *buf;
+    size_t len;
+    size_t off;
+    FILE *f;
 
-  *res = v7_mk_number(v7, result);
-  return V7_OK;
+    fn = duk_require_string(ctx, 0);
+    f = fopen(fn, "wb");
+    if (!f) {
+        duk_error(ctx, DUK_ERR_TYPE_ERROR, "cannot open file %s for writing, errno %ld: %s",
+                  fn, (long) errno, strerror(errno));
+    }
+
+    len = 0;
+    buf = (char *) duk_to_buffer(ctx, 1, &len);
+    for (off = 0; off < len;) {
+        size_t got;
+        got = fwrite((const void *) (buf + off), 1, len - off, f);
+        if (ferror(f)) {
+            (void) fclose(f);
+            duk_error(ctx, DUK_ERR_TYPE_ERROR, "error while writing %s", fn);
+        }
+        if (got == 0) {
+            (void) fclose(f);
+            duk_error(ctx, DUK_ERR_TYPE_ERROR, "error while writing %s", fn);
+        }
+        off += got;
+    }
+
+    if (f) {
+        (void) fclose(f);
+    }
+
+    return 0;
 }
+//#endif  /* DUK_CMDLINE_FILEIO */
 
-int v7_example(void) {
-  enum v7_err rcode = V7_OK;
-  struct v7 *v7 = v7_create();
-  v7_val_t result;
-  v7_set_method(v7, v7_get_global(v7), "sum", &js_sum);
-
-  rcode = v7_exec_file(v7, "test.js", &result);
-
-  if (rcode != V7_OK) {
-    v7_print_error(stderr, v7, "Evaluation error", result);
-  }
-
-  v7_destroy(v7);
-  return (int) rcode;
-}
 
 int main(void) {
-  Test test;
-  test.ok();
-  return v7_example();
+    duk_context *ctx = duk_create_heap_default();
+    duk_console_init(ctx, 0 /*flags*/);
+    duk_push_c_function(ctx, fileio_read_file, 1 /*nargs*/);
+    duk_put_global_string(ctx, "readFile");
+    duk_push_c_function(ctx, fileio_write_file, 2 /*nargs*/);
+    duk_put_global_string(ctx, "writeFile");
+
+    duk_eval_string_noresult(ctx, js_file);
+    duk_destroy_heap(ctx);
+    return 0;
 }
