@@ -91,37 +91,35 @@ void destroy_duktape()
 
 // Interleaved buffers
 int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
-           double /*streamTime*/, RtAudioStreamStatus status, void *mydata )
+           double /*streamTime*/, RtAudioStreamStatus /*status*/, void *data )
 {
   // Write out a pulse signal and ignore the input buffer.
+  HexAudioData *hexData = (HexAudioData *) data;
+
   unsigned int i, j;
 
   float sample;
   float *buffer = (float *) outputBuffer;
 
-  HexAudioData *data = (HexAudioData *) mydata;
+  unsigned int buffSize = nBufferFrames;
 
-  int buffSize = nBufferFrames;
-  int buffEnd = data->frameCounter + nBufferFrames;
+  int buffEnd = hexData->frameCounter + nBufferFrames;
+  int sampleSize = (int) hexData->hex2wav_audio.size();
 
-  int sampleSize = (int) data->hex2wav_audio.size();
 
   if ( buffEnd > sampleSize ) buffSize = buffEnd - sampleSize;
-
-//  if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
+  //if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
 
   for ( i=0; i <buffSize; i++ ) {
-
-//    printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
-
-    sample = data->hex2wav_audio.at(data->frameCounter);
+    //printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
+    sample = hexData->hex2wav_audio.at(hexData->frameCounter);
     //interleaved
-    for ( j=0; j<data->channels; j++ )
-      *buffer++ = sample;
-    data->frameCounter++;
+    for ( j=0; j<hexData->channels; j++ ) *buffer++ = sample;
+    //accumulate frame
+    hexData->frameCounter++;
   }
 
-  //    printf("frame %i\n" , data->frameCounter);
+  //printf("frame %i\n" , data->frameCounter);
   printf("buffSize %i\n" , buffSize);
 
   if (buffSize < nBufferFrames)
