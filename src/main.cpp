@@ -36,6 +36,17 @@ duk_context *ctx;
 char * hex2wav_input_filename;
 char hex2wav_no_file[] = "";
 
+RtAudio * adc;
+
+struct MyData {
+  unsigned int channels;
+  std::vector<double> hex2wav_audio;
+  int frameCounter;
+};
+
+MyData mydata;
+
+
 duk_context * init_duktape()
 {
     duk_context *ctx = duk_create_heap_default();
@@ -52,7 +63,7 @@ duk_context * init_duktape()
 /* Adder: add argument values. */
 static duk_ret_t push_audio_array(duk_context *ctx) {
   double audio = (double) duk_to_number(ctx, 0); //get from argument 0
-  hex2wav_audio.push_back(audio);
+  mydata.hex2wav_audio.push_back(audio);
   duk_push_number(ctx, 1);
   return 1;  /* one return value */
 }
@@ -63,14 +74,6 @@ static duk_ret_t get_file_argument(duk_context *ctx) {
   return 1;  /* one return value */
 }
 
-
-//// Interleaved buffers
-int output( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
-            double /*streamTime*/, RtAudioStreamStatus /*status*/, void *data )
-{
-
-  return 0;
-}
 
 void setup_duktape()
 {
@@ -86,15 +89,52 @@ void destroy_duktape()
     duk_destroy_heap(ctx);
 }
 
+// Interleaved buffers
+int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
+           double /*streamTime*/, RtAudioStreamStatus status, void *mydata )
+{
+  // Write out a pulse signal and ignore the input buffer.
+  unsigned int i, j;
+  float sample;
+  float *buffer = (float *) outputBuffer;
+  MyData *data = (MyData *) mydata;
+  //printf("bufframe %i\n",nBufferFrames);
+
+  if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
+
+  for ( i=0; i<nBufferFrames; i++ ) {
+     printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
+    sample = data->hex2wav_audio.at(i);
+    for ( j=0; j<data->channels; j++ )
+      *buffer++ = sample;
+
+    data->frameCounter++;
+//    printf("id: %i frame %i from %i\n",i, data->frameCounter, (int) data->hex2wav_audio.size());
+
+  }
+
+
+  if ( data->frameCounter >= (int) data->hex2wav_audio.size() )
+    return 0;
+  else
+    return 0;
+}
+
 
 int main(int argc, char* argv[]) {
     setup_duktape();
     //init dac
-    RtAudio dac;
-    if ( dac.getDeviceCount() < 1 ) {
+
+    RtAudio *adc = new RtAudio();
+
+    if ( adc->getDeviceCount() < 1 ) {
       std::cout << "\nNo audio devices found!\n";
       exit( 1 );
     }
+
+
+    // Let RtAudio print messages to stderr.
+    adc->showWarnings( true );
 
     if (argc == 2)
     {
@@ -103,9 +143,31 @@ int main(int argc, char* argv[]) {
         hex2wav_input_filename = hex2wav_no_file;
     }
 
-    // Let RtAudio print messages to stderr.
-    dac.showWarnings( true );
     duk_eval_string_noresult(ctx, js_file);
+
+    RtAudio::StreamParameters oParams, iParams;
+    oParams.deviceId = adc->getDefaultOutputDevice();
+    oParams.nChannels = 2;
+    oParams.firstChannel = 0;
+
+    unsigned int bufferFrames = 512;
+
+
+    //rtaudio playback
+    mydata.frameCounter = 0;
+    mydata.channels = 2;
+
+
+    adc->openStream( &oParams, NULL, RTAUDIO_SINT32, 44100, &bufferFrames, &pulse, (void *)&mydata );
+    adc->startStream();
+
+    while ( adc->isStreamRunning() ) SLEEP( 5 );
+    std::cout << "stream stopped via callback return value = 1.\n";
+    SLEEP( 0.1 );
+
+    if ( adc && adc->isStreamOpen() ) adc->closeStream();
+    if ( adc ) delete adc;
+
     destroy_duktape();
     return 0;
 }
