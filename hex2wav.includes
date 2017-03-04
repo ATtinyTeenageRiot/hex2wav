@@ -3,3 +3,4 @@ src
 v7
 duktape-2.0.1/src
 duktape-2.0.1/extras/console
+rtaudio-4.1.2
