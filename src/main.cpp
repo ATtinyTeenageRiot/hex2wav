@@ -31,6 +31,7 @@ struct OutputData {
 
 std::vector<double> hex2wav_audio;
 
+duk_context *ctx;
 
 duk_context * init_duktape()
 {
@@ -55,46 +56,36 @@ static duk_ret_t push_audio_array(duk_context *ctx) {
 
 
 //// Interleaved buffers
-//int output( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
-//            double /*streamTime*/, RtAudioStreamStatus /*status*/, void *data )
-//{
-//  OutputData *oData = (OutputData*) data;
+int output( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
+            double /*streamTime*/, RtAudioStreamStatus /*status*/, void *data )
+{
 
-//  // In general, it's not a good idea to do file input in the audio
-//  // callback function but I'm doing it here because I don't know the
-//  // length of the file we are reading.
-//  unsigned int count = fread( outputBuffer, oData->channels * sizeof( MY_TYPE ), nBufferFrames, oData->fd);
-//  if ( count < nBufferFrames ) {
-//    unsigned int bytes = (nBufferFrames - count) * oData->channels * sizeof( MY_TYPE );
-//    unsigned int startByte = count * oData->channels * sizeof( MY_TYPE );
-//    memset( (char *)(outputBuffer)+startByte, 0, bytes );
-//    return 1;
-//  }
+  return 0;
+}
 
-//  return 0;
-//}
+void setup_duktape()
+{
+    ctx = init_duktape();
+    duk_push_c_function(ctx, push_audio_array, 1);
+    duk_put_global_string(ctx, "pushAudio");
+}
+
+void destroy_duktape()
+{
+    duk_destroy_heap(ctx);
+}
 
 int main(void) {
-    duk_context *ctx = init_duktape();
-
-    duk_push_c_function(ctx, push_audio_array, DUK_VARARGS);
-    duk_put_global_string(ctx, "pushAudio");
-
+    setup_duktape();
     //init dac
     RtAudio dac;
     if ( dac.getDeviceCount() < 1 ) {
       std::cout << "\nNo audio devices found!\n";
       exit( 1 );
     }
-
     // Let RtAudio print messages to stderr.
     dac.showWarnings( true );
-
-
-
     duk_eval_string_noresult(ctx, js_file);
-
-
-    duk_destroy_heap(ctx);
+    destroy_duktape();
     return 0;
 }
