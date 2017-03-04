@@ -38,13 +38,13 @@ char hex2wav_no_file[] = "";
 
 RtAudio * adc;
 
-struct MyData {
+struct HexAudioData {
   unsigned int channels;
   std::vector<double> hex2wav_audio;
   int frameCounter;
 };
 
-MyData mydata;
+HexAudioData hexAudioData;
 
 
 duk_context * init_duktape()
@@ -63,7 +63,7 @@ duk_context * init_duktape()
 /* Adder: add argument values. */
 static duk_ret_t push_audio_array(duk_context *ctx) {
   double audio = (double) duk_to_number(ctx, 0); //get from argument 0
-  mydata.hex2wav_audio.push_back(audio);
+  hexAudioData.hex2wav_audio.push_back(audio);
   duk_push_number(ctx, 1);
   return 1;  /* one return value */
 }
@@ -95,29 +95,39 @@ int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrame
 {
   // Write out a pulse signal and ignore the input buffer.
   unsigned int i, j;
+
   float sample;
   float *buffer = (float *) outputBuffer;
-  MyData *data = (MyData *) mydata;
-  //printf("bufframe %i\n",nBufferFrames);
 
-  if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
+  HexAudioData *data = (HexAudioData *) mydata;
 
-  for ( i=0; i<nBufferFrames; i++ ) {
-     printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
-    sample = data->hex2wav_audio.at(i);
+  int buffSize = nBufferFrames;
+  int buffEnd = data->frameCounter + nBufferFrames;
+
+  int sampleSize = (int) data->hex2wav_audio.size();
+
+  if ( buffEnd > sampleSize ) buffSize = buffEnd - sampleSize;
+
+//  if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
+
+  for ( i=0; i <buffSize; i++ ) {
+
+//    printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
+
+    sample = data->hex2wav_audio.at(data->frameCounter);
+    //interleaved
     for ( j=0; j<data->channels; j++ )
       *buffer++ = sample;
-
     data->frameCounter++;
-//    printf("id: %i frame %i from %i\n",i, data->frameCounter, (int) data->hex2wav_audio.size());
-
   }
 
+  //    printf("frame %i\n" , data->frameCounter);
+  printf("buffSize %i\n" , buffSize);
 
-  if ( data->frameCounter >= (int) data->hex2wav_audio.size() )
-    return 0;
+  if (buffSize < nBufferFrames)
+      return 1;
   else
-    return 0;
+      return 0;
 }
 
 
@@ -131,7 +141,6 @@ int main(int argc, char* argv[]) {
       std::cout << "\nNo audio devices found!\n";
       exit( 1 );
     }
-
 
     // Let RtAudio print messages to stderr.
     adc->showWarnings( true );
@@ -152,13 +161,11 @@ int main(int argc, char* argv[]) {
 
     unsigned int bufferFrames = 512;
 
-
     //rtaudio playback
-    mydata.frameCounter = 0;
-    mydata.channels = 2;
+    hexAudioData.frameCounter = 0;
+    hexAudioData.channels = 2;
 
-
-    adc->openStream( &oParams, NULL, RTAUDIO_SINT32, 44100, &bufferFrames, &pulse, (void *)&mydata );
+    adc->openStream( &oParams, NULL, RTAUDIO_FLOAT32, 44100, &bufferFrames, &pulse, (void *)&hexAudioData );
     adc->startStream();
 
     while ( adc->isStreamRunning() ) SLEEP( 5 );
