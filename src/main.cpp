@@ -20,15 +20,6 @@
   #define SLEEP( milliseconds ) usleep( (unsigned long) (milliseconds * 1000.0) )
 #endif
 
-#define BASE_RATE 0.005
-#define TIME   1.0
-
-struct OutputData {
-  unsigned int channels;
-  unsigned int count;
-  unsigned int index;
-};
-
 std::vector<double> hex2wav_audio;
 
 duk_context *ctx;
@@ -96,19 +87,25 @@ int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrame
   // Write out a pulse signal and ignore the input buffer.
   HexAudioData *hexData = (HexAudioData *) data;
 
-  unsigned int i, j;
+  unsigned int i, j, buffSize, sampleSize;
 
   float sample;
   float *buffer = (float *) outputBuffer;
 
-  unsigned int buffSize = nBufferFrames;
+  buffSize = nBufferFrames;
+  sampleSize = (int) hexData->hex2wav_audio.size();
 
-  int buffEnd = hexData->frameCounter + nBufferFrames;
-  int sampleSize = (int) hexData->hex2wav_audio.size();
+ if ((sampleSize - hexData->frameCounter) < nBufferFrames)
+    buffSize = sampleSize - hexData->frameCounter;
 
-
-  if ( buffEnd > sampleSize ) buffSize = buffEnd - sampleSize;
   //if ( status ) std::cout << "Stream over/underflow detected!" << std::endl;
+
+//  printf("----------\n");
+//  printf("frame %i\n" , hexData->frameCounter);
+//  printf("buffSize %i\n" , buffSize);
+//  printf("nBufferFrames %i\n" , nBufferFrames);
+//  printf("sampleSize %i\n" , sampleSize);
+//  printf("----------\n");
 
   for ( i=0; i <buffSize; i++ ) {
     //printf("%i sample %f\n",data->frameCounter, data->hex2wav_audio.at(data->frameCounter));
@@ -119,13 +116,13 @@ int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrame
     hexData->frameCounter++;
   }
 
-  //printf("frame %i\n" , data->frameCounter);
-  printf("buffSize %i\n" , buffSize);
-
   if (buffSize < nBufferFrames)
+  {
+      printf("stop");
       return 1;
-  else
+  }else{
       return 0;
+  }
 }
 
 
