@@ -550,11 +550,12 @@ const char js_file[] =
                           "var framesample = [2,2,0,48,1,170,85,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147];\n"
                           "\n"
                           " var wg = new WavCodeGenerator();\n"
-                          " var hex_decoded = decodeHexFile(new TextDecoder().decode(readFile(\"test.txt\")));"
+                          " var hex_decoded = decodeHexFile(new TextDecoder().decode(readFile(getHexFile())));"
                           " var signal = wg.generateSignal(hex_decoded);\n"
                           "for (var i = 0; i < signal.length; i++) {\n"
                           "    pushAudio(signal[i]);\n"
                           "}\n"
+                          "console.log(\"filename\" + getHexFile())\n"
                           "//\n"
                           "";
 

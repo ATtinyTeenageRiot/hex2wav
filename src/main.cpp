@@ -33,6 +33,9 @@ std::vector<double> hex2wav_audio;
 
 duk_context *ctx;
 
+char * hex2wav_input_filename;
+char hex2wav_no_file[] = "";
+
 duk_context * init_duktape()
 {
     duk_context *ctx = duk_create_heap_default();
@@ -54,6 +57,12 @@ static duk_ret_t push_audio_array(duk_context *ctx) {
   return 1;  /* one return value */
 }
 
+/* Adder: add argument values. */
+static duk_ret_t get_file_argument(duk_context *ctx) {
+  duk_push_string(ctx, hex2wav_input_filename);
+  return 1;  /* one return value */
+}
+
 
 //// Interleaved buffers
 int output( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
@@ -68,6 +77,8 @@ void setup_duktape()
     ctx = init_duktape();
     duk_push_c_function(ctx, push_audio_array, 1);
     duk_put_global_string(ctx, "pushAudio");
+    duk_push_c_function(ctx, get_file_argument, 1);
+    duk_put_global_string(ctx, "getHexFile");
 }
 
 void destroy_duktape()
@@ -75,7 +86,8 @@ void destroy_duktape()
     duk_destroy_heap(ctx);
 }
 
-int main(void) {
+
+int main(int argc, char* argv[]) {
     setup_duktape();
     //init dac
     RtAudio dac;
@@ -83,6 +95,14 @@ int main(void) {
       std::cout << "\nNo audio devices found!\n";
       exit( 1 );
     }
+
+    if (argc == 2)
+    {
+        hex2wav_input_filename = argv[1];
+    }else{
+        hex2wav_input_filename = hex2wav_no_file;
+    }
+
     // Let RtAudio print messages to stderr.
     dac.showWarnings( true );
     duk_eval_string_noresult(ctx, js_file);
