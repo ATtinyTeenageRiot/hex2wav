@@ -1,7 +1,12 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
+#include <sstream>
 
-#define signal_type std::vector<float>
+using namespace std;
+
+#define signal_type vector<float>
 
 class BootFrame {
 	private:
@@ -154,13 +159,13 @@ public:
 		setSignalSpeed(fullSpeedFlag);
 	}
 	
-	signal_type getDifferentialManchesterCodedSignal(std::vector<int>* hexdata)
+	signal_type getDifferentialManchesterCodedSignal(vector<int>* hexdata)
 	{
 
 		int counter = 0;
 		int laenge = (int) hexdata->size();
 		
-		std::vector<float> signal((laenge*8)*this->manchesterNumberOfSamplesPerBit);
+		vector<float> signal((laenge*8)*this->manchesterNumberOfSamplesPerBit);
 
 		for (int count = 0; count < laenge; count++) {
 			int dat = hexdata->at(count);
@@ -183,7 +188,7 @@ public:
 		return signal;
 	}
 	
-	void manchesterEdge(bool flag, int pointerIntoSignal, std::vector<float>* signal)
+	void manchesterEdge(bool flag, int pointerIntoSignal, vector<float>* signal)
 	{
 
 		int value = 0;
@@ -221,7 +226,7 @@ public:
 	signal_type manchesterCoding(int hexdata[], int hexsize)
 	{
 		int laenge = hexsize;
-		std::vector<float> signal((1+startSequencePulses+laenge*8)*manchesterNumberOfSamplesPerBit);
+		vector<float> signal((1+startSequencePulses+laenge*8)*manchesterNumberOfSamplesPerBit);
 		int counter = 0;
 
 		for (int n = 0; n < startSequencePulses; n++) {
@@ -280,7 +285,7 @@ public:
 		fullSpeedFlag = true;
 	}
 	
-	void appendSignal(std::vector<float> * sig1, std::vector<float> * sig2)
+	void appendSignal(vector<float> * sig1, vector<float> * sig2)
 	{
 		int l2 = (int) sig2->size();
 		for(int n=0;n<l2;n++) sig1->push_back(sig2->at(n));				
@@ -351,7 +356,7 @@ public:
 			return signal;
 	};
 
-	signal_type generateSignal(std::vector<int>* data)
+	signal_type generateSignal(vector<int>* data)
 	{
 
 		signal_type signal;		
@@ -409,15 +414,113 @@ public:
 };
 
 
+class hexFileDecoder 
+{
+public:		
+	vector<int> decodeHex(string file)
+	{
+		vector<int> res;
+		vector<int> data;		
+		string line;
+				
+		ifstream hexFile(file);
+		
+		if (hexFile.is_open())
+		{
+			while ( getline (hexFile,line) )
+			{
+				readLine(&res, line);			
+			}
+			hexFile.close();
+		}		
+		return res;
+	}
+	
+	int hexToDec(string hexString)
+	{
+		int res;
+		stringstream ss;
+		ss << hex << hexString;
+		ss >> res;
+		
+		return res;
+	}	
+	
+	void readLine(vector<int> * res, string line)
+	{
+		bool eof = false;
+		int segment = 0;
+		int extended = 0;
+		
+//		cout << line << "\n";
+		
+		if (line[0] != ':')
+		{
+		} else {
+			int byteCount = hexToDec(line.substr(1, 2));
+			int address = hexToDec(line.substr(3, 4));
+			int recordType =  hexToDec(line.substr(7, 2));
+
+			vector<int> data;
+			
+			switch (recordType) {
+				case 0:
+					for (int i = 0; i < byteCount; i++) {
+						data.push_back(hexToDec(line.substr(i*2+9, 2)));
+					}
+					break;
+				case 1:
+					eof = true;
+					break;
+				case 2:
+					segment = hexToDec(line.substr(9, 2));
+					break;
+				case 3:
+					break;
+				case 4:
+					extended = hexToDec(line.substr(9, 2));
+					break;
+				case 5:
+					break;
+				default:
+					break;
+			}
+			
+			int checksum = hexToDec(line.substr(byteCount*2+9, 2));
+			int sum = 0;
+			
+			for(int i= 0; i<data.size(); i++) {
+				sum = sum + data.at(i);
+			}			
+			
+			if(recordType != 1) {
+				int addy = segment * 16 + address;
+				addy = extended * 65536 + addy;
+				
+				for(int i= 0; i<data.size(); i++) {
+					res->push_back(data.at(i));
+				}	
+			}
+
+		}
+		
+	}
+};
+
+
 
 static const int hexdata[] = {14,192,29,192,28,192,27,192,26,192,49,192,24,192,23,192,22,192,21,192,20,192,19,192,18,192,17,192,16,192,17,36,31,190,207,229,210,224,222,191,205,191,32,224,160,230,176,224,1,192,29,146,169,54,178,7,225,247,4,208,119,192,224,207,8,149,8,149,129,183,129,191,92,208,250,223,250,223,254,207,128,183,128,127,128,191,128,183,128,104,128,191,140,181,128,100,140,189,143,239,141,189,128,183,135,96,128,191,8,149,31,146,15,146,15,182,15146,17,36,47,147,63,147,143,147,159,147,175,147,191,147,128,145,97,0,144,145,98,0,160,145,99,0,176,145,100,0,48,145,96,0,38,224,35,15,45,55,48,240,41,232,35,15,3,150,161,29,177,29,3,192,2,150,161,29,177,29,32,147,96,0,128,147,97,0,144,147,98,0,160,147,99,0,176,147,100,0,128,145,101,0,144,145,102,0,160,145,103,0,176,145,104,0,1,150,161,29,177,29,128,147,101,0,144,147,102,0,160,147,103,0,176,147,104,0,191,145,175,145,159,145,143,145,63,145,47,145,15,144,15,190,15,144,31,144,24,149,138,181,130,96,138,189,138,181,129,96,138,189,131,183,136,127,131,96,131,191,120,148,137,183,130,96,137,191,152,223,134,177,136,119,134,104,134,185,55,154,8,149,248,148,255,207};
 
-std::vector<int> hexvec (hexdata, hexdata + sizeof(hexdata) / sizeof(hexdata[0]) );
+vector<int> hexvec (hexdata, hexdata + sizeof(hexdata) / sizeof(hexdata[0]) );
 
 using namespace std;
 int main(int argc, char *argv[]) {
+	
+	hexFileDecoder hexDec;
 	WavCodeGenerator wg;
+	
 	signal_type hex_signal = wg.generateSignal(&hexvec);
+	
 	int sig_size =  (int) hex_signal.size();
 	int hex_size =  (int) hexvec.size();
 
@@ -425,6 +528,14 @@ int main(int argc, char *argv[]) {
 	printf("hex size: %i\n",hex_size);
 
 	for (int i = 0;i<hex_signal.size();i++) {
-		printf("%.1f\n", hex_signal.at(i));
+//		printf("%.1f\n", hex_signal.at(i));
 	}	
+	
+	vector<int> hex_decoded = hexDec.decodeHex("test.txt");
+	
+	for (int i = 0;i<hex_decoded.size();i++) {
+				printf("%i\n", hex_decoded.at(i));
+	}	
+
+	
 }
