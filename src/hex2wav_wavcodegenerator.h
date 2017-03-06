@@ -70,6 +70,12 @@ public:
     {
             HexToSignal * h2s=new HexToSignal(fullSpeedFlag);
             int frameData[frameSetup.getFrameSize()];
+
+            for(int i = 0; i < frameSetup.getFrameSize(); i++)
+            {
+                frameData[i] = 0;
+            }
+
             frameSetup.setRunCommand();
             frameSetup.addFrameParameters(frameData);
             signal_type signal=h2s->manchesterCoding(frameData, frameSetup.getFrameSize());
@@ -79,8 +85,14 @@ public:
 
     signal_type makeTestCommand()
     {
-            HexToSignal * h2s=new HexToSignal(fullSpeedFlag);
+            HexToSignal * h2s=new HexToSignal(fullSpeedFlag);            
             int frameData[frameSetup.getFrameSize()];
+
+            for(int i = 0; i < frameSetup.getFrameSize(); i++)
+            {
+                frameData[i] = 0;
+            }
+
             frameSetup.setTestCommand();
             frameSetup.addFrameParameters(frameData);
             signal_type signal=h2s->manchesterCoding(frameData, frameSetup.getFrameSize());
