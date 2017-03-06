@@ -88,7 +88,6 @@ int main(int argc, char* argv[]) {
     hexFileDecoder hexDec;
     WavCodeGenerator wg;
 
-
     //init dac
     RtAudio *adc = new RtAudio();
     if ( adc->getDeviceCount() < 1 ) {
@@ -105,19 +104,20 @@ int main(int argc, char* argv[]) {
         hex2wav_input_filename = hex2wav_no_file;
     }
 
-    printf("filename: %s\n", hex2wav_input_filename);
+    std::cout << "converting hex to wav..\n";
 
     vector<int> hex_decoded = hexDec.decodeHex(string(hex2wav_input_filename));
-    signal_type test = wg.generateSignal(&hex_decoded);
+    signal_type hex_signal = wg.generateSignal(&hex_decoded);
 
-    for (int i = 0;i<test.size();i++) {
-        printf("%.1f\n", test.at(i));
-        hexAudioData.hex2wav_audio.push_back(test.at(i));
+    std::cout << "convert done..\n";
+
+    printf("filename: %s\n", hex2wav_input_filename);
+    printf("signal size: %i\n", (int) hex_signal.size());
+
+    for (int i = 0; i< (int) hex_signal.size(); i++) {
+        //printf("%.0f\n", hex_signal.at(i));
+        hexAudioData.hex2wav_audio.push_back(hex_signal.at(i));
     }
-
-
-
-//    duk_eval_string_noresult(ctx, js_file);
 
     RtAudio::StreamParameters oParams, iParams;
     oParams.deviceId = adc->getDefaultOutputDevice();
@@ -134,7 +134,9 @@ int main(int argc, char* argv[]) {
     adc->startStream();
 
     while ( adc->isStreamRunning() ) SLEEP( 5 );
-    std::cout << "stream stopped via callback return value = 1.\n";
+
+//    std::cout << "done..\n";
+
     SLEEP( 0.1 );
 
     if ( adc && adc->isStreamOpen() ) adc->closeStream();
