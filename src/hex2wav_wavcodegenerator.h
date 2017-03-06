@@ -115,19 +115,25 @@ public:
         while(total>0)
         {
             frameSetup.setPageIndex(pagePointer++);
-            frameSetup.setTotalLength(total);
+            frameSetup.setTotalLength(data->size());
 
             signal_type partSig(pl);
 
             for(int n=0; n < pl; n++)
             {
-                if(n+sigPointer>total-1) partSig[n]=0xFF;
+                if(n+sigPointer>data->size()-1) partSig[n]=0xFF;
                 else partSig[n]=data->at(n+sigPointer);
             }
 
             sigPointer += pl;
 
             signal_type sig = generatePageSignal(&partSig);
+
+            cout << "tot:" << total << "\n";
+            for (int i = 0;i<sig.size();i++) {
+             //   printf("%0.f\n", sig.at(i));
+            }
+
             appendSignal(&signal,&sig);
 
             signal_type silence = this->silence(frameSetup.getSilenceBetweenPages());
@@ -136,7 +142,7 @@ public:
 
             appendSignal(&signal, &silence);
 
-            printf("siglen %i\n", (int)signal.size() );
+//            printf("siglen %i\n", (int)signal.size() );
 
             total-=pl;
         }
@@ -156,7 +162,6 @@ public:
 
 
 };
-
 
 
 #endif // WAVCODEGENERATOR_H
