@@ -121,7 +121,7 @@ public:
 
             for(int n=0; n < pl; n++)
             {
-                if(n+sigPointer>data->size()-1) partSig[n]=0xFF;
+                if(n+sigPointer> (int) data->size()-1) partSig[n]=0xFF;
                 else partSig[n]=data->at(n+sigPointer);
             }
 
@@ -129,10 +129,10 @@ public:
 
             signal_type sig = generatePageSignal(&partSig);
 
-            cout << "tot:" << total << "\n";
-            for (int i = 0;i<sig.size();i++) {
+//            cout << "tot:" << total << "\n";
+//            for (int i = 0;i<sig.size();i++) {
              //   printf("%0.f\n", sig.at(i));
-            }
+//            }
 
             appendSignal(&signal,&sig);
 
