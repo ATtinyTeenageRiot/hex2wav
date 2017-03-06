@@ -1,15 +1,16 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <vector>
 
-#include "RtAudio.h"
-#include "duktape.h"
-#include "duk_console.h"
+#include "hex2wav.h"
 
-#include "hex2wavjs.h"
-#include "duktape_fileio.h"
+#include "RtAudio.h"
+
+using namespace std;
 
 // Platform-dependent sleep routines.
 #if defined( __WINDOWS_ASIO__ ) || defined( __WINDOWS_DS__ ) || defined( __WINDOWS_WASAPI__ )
@@ -22,8 +23,6 @@
 
 std::vector<double> hex2wav_audio;
 
-duk_context *ctx;
-
 char * hex2wav_input_filename;
 char hex2wav_no_file[] = "";
 
@@ -31,54 +30,12 @@ RtAudio * adc;
 
 struct HexAudioData {
   unsigned int channels;
-  std::vector<double> hex2wav_audio;
+  vector<float> hex2wav_audio;
   int frameCounter;
 };
 
 HexAudioData hexAudioData;
 
-
-duk_context * init_duktape()
-{
-    duk_context *ctx = duk_create_heap_default();
-    duk_console_init(ctx, 0 /*flags*/);
-    duk_push_c_function(ctx, fileio_read_file, 1 /*nargs*/);
-    duk_put_global_string(ctx, "readFile");
-    duk_push_c_function(ctx, fileio_write_file, 2 /*nargs*/);
-    duk_put_global_string(ctx, "writeFile");
-
-    return ctx;
-}
-
-
-/* Adder: add argument values. */
-static duk_ret_t push_audio_array(duk_context *ctx) {
-  double audio = (double) duk_to_number(ctx, 0); //get from argument 0
-  hexAudioData.hex2wav_audio.push_back(audio);
-  duk_push_number(ctx, 1);
-  return 1;  /* one return value */
-}
-
-/* Adder: add argument values. */
-static duk_ret_t get_file_argument(duk_context *ctx) {
-  duk_push_string(ctx, hex2wav_input_filename);
-  return 1;  /* one return value */
-}
-
-
-void setup_duktape()
-{
-    ctx = init_duktape();
-    duk_push_c_function(ctx, push_audio_array, 1);
-    duk_put_global_string(ctx, "pushAudio");
-    duk_push_c_function(ctx, get_file_argument, 1);
-    duk_put_global_string(ctx, "getHexFile");
-}
-
-void destroy_duktape()
-{
-    duk_destroy_heap(ctx);
-}
 
 // Interleaved buffers
 int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
@@ -127,16 +84,17 @@ int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrame
 
 
 int main(int argc, char* argv[]) {
-    setup_duktape();
+
+    hexFileDecoder hexDec;
+    WavCodeGenerator wg;
+
+
     //init dac
-
     RtAudio *adc = new RtAudio();
-
     if ( adc->getDeviceCount() < 1 ) {
       std::cout << "\nNo audio devices found!\n";
       exit( 1 );
     }
-
     // Let RtAudio print messages to stderr.
     adc->showWarnings( true );
 
@@ -147,7 +105,19 @@ int main(int argc, char* argv[]) {
         hex2wav_input_filename = hex2wav_no_file;
     }
 
-    duk_eval_string_noresult(ctx, js_file);
+    printf("filename: %s\n", hex2wav_input_filename);
+
+    vector<int> hex_decoded = hexDec.decodeHex(string(hex2wav_input_filename));
+    signal_type test = wg.generateSignal(&hex_decoded);
+
+    for (int i = 0;i<test.size();i++) {
+        printf("%.1f\n", test.at(i));
+        hexAudioData.hex2wav_audio.push_back(test.at(i));
+    }
+
+
+
+//    duk_eval_string_noresult(ctx, js_file);
 
     RtAudio::StreamParameters oParams, iParams;
     oParams.deviceId = adc->getDefaultOutputDevice();
@@ -156,7 +126,7 @@ int main(int argc, char* argv[]) {
 
     unsigned int bufferFrames = 512;
 
-    //rtaudio playback
+    //init hex audio data
     hexAudioData.frameCounter = 0;
     hexAudioData.channels = 2;
 
@@ -170,6 +140,5 @@ int main(int argc, char* argv[]) {
     if ( adc && adc->isStreamOpen() ) adc->closeStream();
     if ( adc ) delete adc;
 
-    destroy_duktape();
     return 0;
 }

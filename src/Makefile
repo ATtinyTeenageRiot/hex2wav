@@ -1,2 +1,2 @@
-PROG = call_c_from_js
+PROG = hex2wav
 include examples.mk

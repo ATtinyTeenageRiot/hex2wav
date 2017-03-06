@@ -1,6 +1,8 @@
 src/main.cpp
 v7/v7.h
 v7/v7.c
-src/test.js
-src/hex2wavjs.h
-src/duktape_fileio.h
+src/hex2wav_bootframe.h
+src/hex2wav_hex2signal.h
+src/hex2wav_wavcodegenerator.h
+src/hex2wav_hexfiledecoder.h
+src/hex2wav.h
