@@ -519,23 +519,25 @@ int main(int argc, char *argv[]) {
 	hexFileDecoder hexDec;
 	WavCodeGenerator wg;
 	
-	signal_type hex_signal = wg.generateSignal(&hexvec);
 	
-	int sig_size =  (int) hex_signal.size();
-	int hex_size =  (int) hexvec.size();
-
-	printf("signal size: %i\n",sig_size);
-	printf("hex size: %i\n",hex_size);
+//	int sig_size =  (int) hex_signal.size();
+//	int hex_size =  (int) hexvec.size();
+//
+//	printf("signal size: %i\n",sig_size);
+//	printf("hex size: %i\n",hex_size);
+//
+//	
+	vector<int> hex_decoded = hexDec.decodeHex("test.txt");
+	signal_type hex_signal = wg.generateSignal(&hexvec);
 
 	for (int i = 0;i<hex_signal.size();i++) {
-//		printf("%.1f\n", hex_signal.at(i));
+		printf("%.1f\n", hex_signal.at(i));
 	}	
-	
-	vector<int> hex_decoded = hexDec.decodeHex("test.txt");
-	
-	for (int i = 0;i<hex_decoded.size();i++) {
-				printf("%i\n", hex_decoded.at(i));
-	}	
+
+
+//	for (int i = 0;i<hex_decoded.size();i++) {
+//				printf("%i\n", hex_decoded.at(i));
+//	}	
 
 	
 }
