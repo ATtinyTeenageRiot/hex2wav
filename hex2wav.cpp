@@ -323,7 +323,7 @@ public:
 	};	
 
 
-	signal_type silence(int duration)
+	signal_type silence(float duration)
 	{
 			signal_type signal(duration * sampleRate);
 			int signal_size = (int) signal.size();
@@ -387,7 +387,12 @@ public:
 			appendSignal(&signal,&sig);
 			
 			signal_type silence = this->silence(frameSetup->getSilenceBetweenPages());
+			
+//			printf("siglen silence %i\n", (int)silence.size() );
+			
 			appendSignal(&signal, &silence);
+			
+			printf("siglen %i\n", (int)signal.size() );
 			
 			total-=pl;
 		}
@@ -398,7 +403,7 @@ public:
 		
 		for(int k=0; k<10; k++)
 		{
-			signal_type silencesignal = silence(frameSetup->getSilenceBetweenPages());
+			signal_type silencesignal = this->silence(frameSetup->getSilenceBetweenPages());
 			appendSignal(&signal,&silencesignal);
 		}
 				
@@ -418,7 +423,13 @@ using namespace std;
 int main(int argc, char *argv[]) {
 	WavCodeGenerator wg;
 	signal_type hex_signal = wg.generateSignal(&hexvec);
-	for (int i;i<hex_signal.size();i++) {
-		printf("%f\n", hex_signal.at(i));
+	int sig_size =  (int) hex_signal.size();
+	int hex_size =  (int) hexvec.size();
+
+	printf("signal size: %i\n",sig_size);
+	printf("hex size: %i\n",hex_size);
+
+	for (int i = 0;i<hex_signal.size();i++) {
+		printf("%.1f\n", hex_signal.at(i));
 	}	
 }
