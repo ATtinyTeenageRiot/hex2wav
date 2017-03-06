@@ -371,13 +371,13 @@ public:
 		while(total>0)
 		{
 			frameSetup.setPageIndex(pagePointer++);
-			frameSetup.setTotalLength(total);
+			frameSetup.setTotalLength(data->size());
 
 			signal_type partSig(pl);
 						
 			for(int n=0; n < pl; n++)
 			{
-				if(n+sigPointer>total-1) partSig[n]=0xFF;
+				if(n+sigPointer>data->size()-1) partSig[n]=0xFF;
 				else partSig[n]=data->at(n+sigPointer);
 			}
 
@@ -529,9 +529,10 @@ int main(int argc, char *argv[]) {
 //	
 	vector<int> hex_decoded = hexDec.decodeHex("test.txt");
 	signal_type hex_signal = wg.generateSignal(&hexvec);
+	printf("sig: %i\n", (int) hex_signal.size());
 
 	for (int i = 0;i<hex_signal.size();i++) {
-		printf("%.1f\n", hex_signal.at(i));
+//		printf("%.1f\n", hex_signal.at(i));
 	}	
 
 
