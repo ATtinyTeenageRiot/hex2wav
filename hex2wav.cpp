@@ -271,26 +271,19 @@ class WavCodeGenerator {
 private:
 	int sampleRate;
 	bool fullSpeedFlag;
-	BootFrame * frameSetup;
+	BootFrame frameSetup;
 public:
 	
 	WavCodeGenerator()
 	{
 		sampleRate = 44100;
 		fullSpeedFlag = true;
-		frameSetup = new BootFrame();
 	}
 	
 	void appendSignal(std::vector<float> * sig1, std::vector<float> * sig2)
 	{
-//		int l1 = (int) sig1->size();
 		int l2 = (int) sig2->size();
-
-//		std::vector<float> d(l1+l2);
-		
-//		for(int n=0;n<l1;n++) d.at(n) = sig1->at(n);
-		for(int n=0;n<l2;n++) sig1->push_back(sig2->at(n));		
-		
+		for(int n=0;n<l2;n++) sig1->push_back(sig2->at(n));				
 	}
 
 	void setSignalSpeed (bool fullSpeedFlag) 
@@ -303,20 +296,20 @@ public:
 	{
 			HexToSignal * h2s = new HexToSignal(fullSpeedFlag);
 			
-			int frameData[this->frameSetup->getFrameSize()];
+			int frameData[this->frameSetup.getFrameSize()];
 			
 			int data_size = (int) data->size();
 			
 			// copy data into frame data
-			for(int n=0; n < this->frameSetup->getPageSize(); n++)
+			for(int n=0; n < this->frameSetup.getPageSize(); n++)
 			{
-				if ( n < data_size ) frameData[ n + this->frameSetup->getPageStart() ] = data->at(n);
-				else frameData[ n + this->frameSetup->getPageStart() ] = 0xFF;
+				if ( n < data_size ) frameData[ n + this->frameSetup.getPageStart() ] = data->at(n);
+				else frameData[ n + this->frameSetup.getPageStart() ] = 0xFF;
 			}
 
-			frameSetup->addFrameParameters(frameData);
+			frameSetup.addFrameParameters(frameData);
 			
-			signal_type signal = h2s->manchesterCoding(frameData, this->frameSetup->getFrameSize());
+			signal_type signal = h2s->manchesterCoding(frameData, this->frameSetup.getFrameSize());
 
 			delete h2s;			
 			return signal;
@@ -338,22 +331,24 @@ public:
 
 	signal_type makeRunCommand()
 	{
-			HexToSignal h2s=new HexToSignal(fullSpeedFlag);
-			int frameData[frameSetup->getFrameSize()];
-			frameSetup->setRunCommand();
-			frameSetup->addFrameParameters(frameData);
-			signal_type signal=h2s.manchesterCoding(frameData, frameSetup->getFrameSize());
+			HexToSignal * h2s=new HexToSignal(fullSpeedFlag);
+			int frameData[frameSetup.getFrameSize()];
+			frameSetup.setRunCommand();
+			frameSetup.addFrameParameters(frameData);
+			signal_type signal=h2s->manchesterCoding(frameData, frameSetup.getFrameSize());
+			delete h2s;
 			return signal;
 	};
 
-	void makeTestCommand()
+	signal_type makeTestCommand()
 	{
-				HexToSignal h2s=new HexToSignal(fullSpeedFlag);
-	//			var frameData=new Array(this.frameSetup.getFrameSize());
-				frameSetup->setTestCommand();
-	//			frameSetup.addFrameParameters(frameData);
-	//			var signal=h2s.manchesterCoding(frameData, frameSetup->getFrameSize());
-	//			return signal;
+			HexToSignal * h2s=new HexToSignal(fullSpeedFlag);
+			int frameData[frameSetup.getFrameSize()];
+			frameSetup.setTestCommand();
+			frameSetup.addFrameParameters(frameData);
+			signal_type signal=h2s->manchesterCoding(frameData, frameSetup.getFrameSize());
+			delete h2s;
+			return signal;
 	};
 
 	signal_type generateSignal(std::vector<int>* data)
@@ -361,17 +356,17 @@ public:
 
 		signal_type signal;		
 		
-		int pl = frameSetup->getPageSize();
+		int pl = frameSetup.getPageSize();
 		int total = (int) data->size();
 		int sigPointer=0;
 		int pagePointer=0;
 
-		frameSetup->setProgCommand(); // we want to programm the mc
+		frameSetup.setProgCommand(); // we want to programm the mc
 		
 		while(total>0)
 		{
-			frameSetup->setPageIndex(pagePointer++);
-			frameSetup->setTotalLength(total);
+			frameSetup.setPageIndex(pagePointer++);
+			frameSetup.setTotalLength(total);
 
 			signal_type partSig(pl);
 						
@@ -386,7 +381,7 @@ public:
 			signal_type sig = generatePageSignal(&partSig);						
 			appendSignal(&signal,&sig);
 			
-			signal_type silence = this->silence(frameSetup->getSilenceBetweenPages());
+			signal_type silence = this->silence(frameSetup.getSilenceBetweenPages());
 			
 //			printf("siglen silence %i\n", (int)silence.size() );
 			
@@ -403,7 +398,7 @@ public:
 		
 		for(int k=0; k<10; k++)
 		{
-			signal_type silencesignal = this->silence(frameSetup->getSilenceBetweenPages());
+			signal_type silencesignal = this->silence(frameSetup.getSilenceBetweenPages());
 			appendSignal(&signal,&silencesignal);
 		}
 				
