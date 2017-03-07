@@ -11,7 +11,7 @@ else
 LIBS = -lole32 -ldsound -lwinmm
 DEFINES = -DPACKAGE_NAME=\"RtAudio\" -DPACKAGE_TARNAME=\"rtaudio\" -DPACKAGE_VERSION=\"4.1.2\" "-DPACKAGE_STRING=\"RtAudio 4.1.2\"" -DPACKAGE_BUGREPORT=\"gary@music.mcgill.ca\" -DPACKAGE_URL=\"\" -DPACKAGE=\"rtaudio\" -DVERSION=\"4.1.2\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DLT_OBJDIR=\".libs/\" -DSTDC_HEADERS=1 -DHAVE_UNISTD_H=1 -I. -D__WINDOWS_DS__ 
 EXE_SUFFIX = .exe
-OSFLAG = -D WIN -D__WINDOWS_DS__ -static-libstdc++ -static-libgcc
+OSFLAG = -D WIN -D__WINDOWS_DS__ -static-libgcc
 CFLAGS = -O3 -Wall -Wextra -static-libgcc $(CFLAGS_EXTRA) $(MODULE_CFLAGS) -std=c++11
 endif
                                 
