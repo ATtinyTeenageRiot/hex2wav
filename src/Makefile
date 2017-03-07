@@ -13,7 +13,7 @@ endif
 
 CC=g++
 SOURCES = main.cpp ../rtaudio-4.1.2/RtAudio.cpp
-CFLAGS = -W -Wall $(CFLAGS_EXTRA) $(MODULE_CFLAGS)
+CFLAGS = -W -Wall $(CFLAGS_EXTRA) $(MODULE_CFLAGS) -std=c++11
 INCLUDES = -I../rtaudio-4.1.2/
 LIBRARY = $(LIBS)
 
