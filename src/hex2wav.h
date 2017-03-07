@@ -9,6 +9,7 @@
 
 #define signal_type vector<float>
 
+#include "hex2wav_signalplayer.h"
 #include "hex2wav_bootframe.h"
 #include "hex2wav_hex2signal.h"
 #include "hex2wav_hexfiledecoder.h"
