@@ -4,7 +4,7 @@
 #include "RtAudio.h"
 
 // Platform-dependent sleep routines.
-#if defined( __WINDOWS_ASIO__ ) || defined( __WINDOWS_DS__ ) || defined( __WINDOWS_WASAPI__ )
+#if defined( __WINDOWS_ASIO__ ) || defined( __WINDOWS_DS__ ) || defined( __WINDOWS_WASAPI__ ) || defined(WIN)
   #include <windows.h>
   #define SLEEP( milliseconds ) Sleep( (DWORD) milliseconds )
 #else // Unix variants
