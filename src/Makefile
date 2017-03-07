@@ -8,7 +8,7 @@ OSFLAG = -D MAC_OS
 EXE_SUFFIX =
 else
 EXE_SUFFIX = .exe
-OSFLAG = -D WIN -static-libstdc++ -static-libgcc
+OSFLAG = -D WIN -D__WINDOWS_DS__  -static-libstdc++ -static-libgcc
 endif
 
 CC=g++

@@ -81,7 +81,6 @@ public:
         adc = new RtAudio();
         if ( adc->getDeviceCount() < 1 ) {
           std::cout << "\nNo audio devices found!\n";
-          exit( 1 );
         }
 
         // Let RtAudio print messages to stderr.
