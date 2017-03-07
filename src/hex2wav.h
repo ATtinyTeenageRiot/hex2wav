@@ -14,5 +14,6 @@
 #include "hex2wav_hex2signal.h"
 #include "hex2wav_hexfiledecoder.h"
 #include "hex2wav_wavcodegenerator.h"
+#include "hex2wav_signalwriter.h"
 
 #endif // HEX2WAV_H

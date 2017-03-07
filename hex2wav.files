@@ -7,3 +7,4 @@ src/hex2wav_wavcodegenerator.h
 src/hex2wav_hexfiledecoder.h
 src/hex2wav.h
 src/hex2wav_signalplayer.h
+src/hex2wav_signalwriter.h
