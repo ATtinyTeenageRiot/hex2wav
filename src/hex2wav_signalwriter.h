@@ -1,7 +1,6 @@
 #ifndef HEX2WAV_SIGNALWRITER_H
 #define HEX2WAV_SIGNALWRITER_H
 
-#include "soundfile.h"
 #include <stdlib.h>
 
 using namespace std;
