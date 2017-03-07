@@ -1,13 +1,6 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
 #include <stdio.h>
-#include <string.h>
 #include <errno.h>
-#include <vector>
-
 #include "hex2wav.h"
-
 #include "RtAudio.h"
 
 using namespace std;

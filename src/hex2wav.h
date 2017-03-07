@@ -1,6 +1,12 @@
 #ifndef HEX2WAV_H
 #define HEX2WAV_H
 
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <string.h>
+
 #define signal_type vector<float>
 
 #include "hex2wav_bootframe.h"
