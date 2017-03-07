@@ -4,8 +4,19 @@
 
 using namespace std;
 
-char * hex2wav_input_filename;
+string hex2wav_input_filename;
+string hex2wav_output_filename;
+
 char hex2wav_no_file[] = "";
+
+/*funcion that show the help information*/
+void showhelpinfo(char *s)
+{
+  cout<<"Usage:   "<<s<<" [-option] <input hex file> <output wav file>"<<endl;
+  cout<<"option:  "<<"--no-sound: no sound output"<<endl;
+  cout<<"         "<<"--no-file: no file output"<<endl;
+  cout<<"example: "<<s<<" test.hex test.wav"<<endl<<endl;
+}
 
 int main(int argc, char* argv[]) {
 
@@ -14,12 +25,41 @@ int main(int argc, char* argv[]) {
     SignalPlayer signalPlayer;
     SignalWriter signalWriter;
 
-    if (argc == 2)
-    {
-        hex2wav_input_filename = argv[1];
-    }else{
-        hex2wav_input_filename = hex2wav_no_file;
+    int arg_pointer = 1;
+    int found_opt = 0;
+    int last_argc = 0;
+
+    bool no_sound = false;
+    bool no_file = false;
+
+    while (arg_pointer < argc) {
+      if (strcmp(argv[arg_pointer], "--no-sound") == 0) {
+            no_sound = true;
+            found_opt++;
+      }
+      if (strcmp(argv[arg_pointer], "--no-file") == 0) {
+            no_file = true;
+            found_opt++;
+      }
+      arg_pointer += 1;
     }
+
+    last_argc = arg_pointer - found_opt - 1;
+
+    if (last_argc == 1)
+    {
+        hex2wav_input_filename = string(argv[arg_pointer-1]);
+        hex2wav_output_filename = hex2wav_input_filename;
+        hex2wav_output_filename.append(".wav");
+    } else if (last_argc == 2) {
+        hex2wav_input_filename = argv[arg_pointer-2];
+        hex2wav_output_filename = argv[arg_pointer-1];
+    } else {
+        showhelpinfo(argv[0]);
+        exit(1);
+    }
+
+    if(no_sound && no_file) exit(1);
 
     std::cout << "converting hex to wav..\n";
 
@@ -28,11 +68,11 @@ int main(int argc, char* argv[]) {
 
     std::cout << "convert done..\n";
 
-    printf("filename: %s\n", hex2wav_input_filename);
+    printf("filename: %s\n", hex2wav_input_filename.c_str());
     printf("signal size: %i\n", (int) hex_signal.size());
 
-    signalWriter.writeWavFromSignal(hex_signal);
-    signalPlayer.playSignal(&hex_signal);
+    if (!no_file) signalWriter.writeWavFromSignal(hex_signal, hex2wav_output_filename);
+    if (!no_sound) signalPlayer.playSignal(&hex_signal);
 
 
     return 0;

@@ -16,9 +16,9 @@ private:
 
 public:
 
-    void writeWavFromSignal(vector<float> sig)
+    void writeWavFromSignal(vector<float> sig, string fileName )
     {
-        writeWAVData<float>("test.wav", 44100, 1, sig);
+        writeWAVData<float>(fileName, 44100, 1, sig);
     }
 
     template <typename SampleType>
