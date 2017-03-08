@@ -8,6 +8,7 @@ class WavCodeGenerator {
 private:
     int sampleRate;
     bool fullSpeedFlag;
+    bool debug;
     BootFrame frameSetup;
 public:
 
@@ -15,6 +16,13 @@ public:
     {
         sampleRate = 44100;
         fullSpeedFlag = true;
+        debug = false;
+    }
+
+
+    void setDebug(bool debug)
+    {
+        this->debug = debug;
     }
 
     void appendSignal(signal_type * sig1, signal_type * sig2)
@@ -148,7 +156,7 @@ public:
 
             appendSignal(&signal, &silence);
 
-//            printf("siglen %i\n", (int)signal.size() );
+            if(this->debug) printf("siglen: %i\n", (int)signal.size() );
 
             total-=pl;
         }
