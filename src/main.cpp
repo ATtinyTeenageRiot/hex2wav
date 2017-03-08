@@ -33,6 +33,18 @@ void showhelpinfo(char *s)
   cout<<"            "<<s<<" --debug test.hex                                    "<<endl<<endl;
 }
 
+void showDone()
+{
+    string str = "\n\n      MIMI\n"
+                 "    /\\___/\\\n"
+                 "   |       |\n"
+                 "  _  *   *  _\n"
+                 "  -   /_\\   -\n"
+                 "      ---\n\n";
+
+    printf("%s", str.c_str());
+}
+
 int main(int argc, char* argv[]) {
 
     hexFileDecoder hexDec;
@@ -114,6 +126,9 @@ int main(int argc, char* argv[]) {
             printf("%f", hex_signal.at(i));
         }
     }
+
+
+    if(!dump) showDone();
 
     return 0;
 }
