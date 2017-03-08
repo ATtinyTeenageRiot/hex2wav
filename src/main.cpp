@@ -35,14 +35,14 @@ void showhelpinfo(char *s)
 
 void showDone()
 {
-    string str ="\nHex2Wav done..\n\n"
+    string str ="\n\n"
                  "    /\\___/\\     MI\n"
                  "   |       |    MI\n"
                  "  _  *   *  _\n"
                  "  -   /_\\   -\n"
-                 "      ---\n\n";
-
-    printf("%s", str.c_str());
+                 "      ---\n\n"
+                 "\nHex2Wav done..\n\n";
+    cout << str;
 }
 
 int main(int argc, char* argv[]) {
