@@ -10,7 +10,7 @@ STAGING_DIR="./tools/staging"
 
 
 DESTINATION_REPO="."
-COMMIT_HASH="1ff085278305ba4b5b0b6aadbd4ad952952b2669"
+COMMIT_HASH="2a7c9e21b56452a7b74abcd66028554ced1b73c0"
 
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'
@@ -42,16 +42,18 @@ make
 # patchelf --set-rpath ./ ./avrdude
 # patchelf --print-rpath ./avrdude
 
-# mv ./avrdude ./avrdude_bin
+mkdir -p ../buildscripts/linux
+mv ./hex2wav ../buildscripts/linux
+mv ./test.hex ../buildscripts/linux
 
 # cp "/lib/libusb-0.1.so.4" .
 # cp "/lib/libusb-1.0.so.0" .
 # cp "/lib/libncurses.so.5" .
 # cp "/usr/lib/libasound.so.2.0.0" .
 
-git log -1 > changelog.txt
+git log -1 > ../buildscripts/linux/changelog.txt
 
 '"
 
 mkdir -p "${cwd}/${DESTINATION_REPO}/linux"
-scp -P ${PORT} ${REMOTE}:${REPO_DIR}/avrdude-6.0rc1/\{avrdude_bin,changelog.txt,libusb-0.1.so.4,libusb-1.0.so.0,libncurses.so.5,libasound.so.2.0.0\} "${cwd}/${DESTINATION_REPO}/linux"
+scp -P ${PORT} "${REMOTE}:${REPO_DIR}/buildscripts/linux/*" "${cwd}/${DESTINATION_REPO}/linux"
