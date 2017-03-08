@@ -156,6 +156,7 @@ public:
 
             appendSignal(&signal, &silence);
 
+            if(this->debug) printf("getSilenceBetweenPages: %i\n", (int) (frameSetup.getSilenceBetweenPages() * sampleRate));
             if(this->debug) printf("append silence: %i\n", (int)silence.size() );
             if(this->debug) printf("siglen: %i\n", (int)signal.size() );
 
