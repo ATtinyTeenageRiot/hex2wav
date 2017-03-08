@@ -59,7 +59,6 @@ int pulse( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrame
 
   if (buffSize < nBufferFrames)
   {
-      printf("stop");
       return 1;
   }else{
       return 0;
