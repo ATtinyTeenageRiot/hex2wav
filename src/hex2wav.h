@@ -6,7 +6,6 @@
 #include <sstream>
 #include <iostream>
 #include <string.h>
-#include <cmath>
 
 #define signal_type vector<float>
 
