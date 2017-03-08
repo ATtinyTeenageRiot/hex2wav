@@ -7,15 +7,15 @@ using namespace std;
 string hex2wav_input_filename;
 string hex2wav_output_filename;
 
-char hex2wav_no_file[] = "";
-
 /*funcion that show the help information*/
 void showhelpinfo(char *s)
 {
   cout<<"Usage:   "<<s<<" [-option] <input hex file> <output wav file>"<<endl;
-  cout<<"option:  "<<"--no-sound: no sound output"<<endl;
-  cout<<"         "<<"--no-file: no file output"<<endl;
-  cout<<"example: "<<s<<" test.hex test.wav"<<endl<<endl;
+  cout<<"option:  "<<"--no-sound: no sound output                     "<<endl;
+  cout<<"         "<<"--no-file: no file output                       "<<endl;
+  cout<<"         "<<"--debug: show debug message                     "<<endl;
+  cout<<"example: "<<s<<" test.hex test.wav                           "<<endl;
+  cout<<"         "<<s<<" test.hex                                    "<<endl<<endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -31,6 +31,7 @@ int main(int argc, char* argv[]) {
 
     bool no_sound = false;
     bool no_file = false;
+    bool debug = false;
 
     while (arg_pointer < argc) {
       if (strcmp(argv[arg_pointer], "--no-sound") == 0) {
@@ -39,6 +40,10 @@ int main(int argc, char* argv[]) {
       }
       if (strcmp(argv[arg_pointer], "--no-file") == 0) {
             no_file = true;
+            found_opt++;
+      }
+      if (strcmp(argv[arg_pointer], "--debug") == 0) {
+            debug = true;
             found_opt++;
       }
       arg_pointer += 1;
@@ -61,15 +66,20 @@ int main(int argc, char* argv[]) {
 
     if(no_sound && no_file) exit(1);
 
+    printf("input: <%s> ", hex2wav_input_filename.c_str());
+    printf("output: <%s>\n", hex2wav_output_filename.c_str());
+
     std::cout << "converting hex to wav..\n";
+
+    waveGen.setDebug(debug);
 
     vector<int> hex_decoded = hexDec.decodeHex(string(hex2wav_input_filename));
     signal_type hex_signal = waveGen.generateSignal(&hex_decoded);
 
-    std::cout << "convert done..\n";
+    std::cout << "convert done.\n";
 
-    printf("filename: %s\n", hex2wav_input_filename.c_str());
     printf("signal size: %i\n", (int) hex_signal.size());
+
 
     if (!no_file) signalWriter.writeWavFromSignal(hex_signal, hex2wav_output_filename);
     if (!no_sound) signalPlayer.playSignal(&hex_signal);
