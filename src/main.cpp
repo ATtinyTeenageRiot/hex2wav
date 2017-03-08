@@ -13,7 +13,7 @@ void showCreditInfo()
   cout<<"" << endl;
   cout<<" Hex2Wav e.·´¯`·.´¯`·.¸¸.·´¯`·.¸><(((º> build " << BUILD_HASH << " "<<endl;
   cout<<"" << endl;
-  cout<<" Small program for upload program to TinyAudioBoot"<<endl;
+  cout<<" Small program for uploading hex file to TinyAudioBoot"<<endl;
   cout<<" Original Java code by Chris Haberer, Hex decoder by Fredrik Olofsson, C++ port by Budi Prakosa"<<endl;
   cout<<"" << endl;
   cout<<"   Bootloader: https://github.com/ChrisMicro/TinyAudioBoot"<<endl;
@@ -35,7 +35,7 @@ void showhelpinfo(char *s)
 
 void showDone()
 {
-    string str = "\n\n      MIMI\n"
+    string str ="\nHex2Wav done..\n\n"
                  "    /\\___/\\\n"
                  "   |       |\n"
                  "  _  *   *  _\n"
