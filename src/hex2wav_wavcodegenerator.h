@@ -63,7 +63,8 @@ public:
 
     signal_type silence(float duration)
     {
-            signal_type signal(duration * sampleRate);
+            int dur = (int) (duration * sampleRate);
+            signal_type signal(dur);
             int signal_size = (int) signal.size();
 
             for (int i = 0; i < signal_size; i++) {
