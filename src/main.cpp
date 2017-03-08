@@ -10,21 +10,27 @@ string hex2wav_output_filename;
 /*funcion that show the help information*/
 void showCreditInfo()
 {
-  cout<<"Hex2Wav build " << BUILD_HASH << " "<<endl;  
-  cout<<" Original Java code by Chris Haberer, Hex decoder by Fredrik Olofsson, C++ port by Budi Prakosa"<<endl;  
-  cout<<"  repo: https://github.com/ATtinyTeenageRiot/hex2wav"<<endl;
-  cout<<"  part of: https://github.com/8BitMixtape/8Bit-Mixtape-NEO"<<endl;
+  cout<<"" << endl;
+  cout<<" Hex2Wav e.·´¯`·.´¯`·.¸¸.·´¯`·.¸><(((º> build " << BUILD_HASH << " "<<endl;
+  cout<<"" << endl;
+  cout<<" Small program for upload program to TinyAudioBoot"<<endl;
+  cout<<" Original Java code by Chris Haberer, Hex decoder by Fredrik Olofsson, C++ port by Budi Prakosa"<<endl;
+  cout<<"" << endl;
+  cout<<"   Bootloader: https://github.com/ChrisMicro/TinyAudioBoot"<<endl;
+  cout<<"   Hex2Wav: https://github.com/ATtinyTeenageRiot/hex2wav"<<endl;
+  cout<<"   Part of: https://github.com/8BitMixtape/8Bit-Mixtape-NEO"<<endl;
+  cout<<"" << endl;
 }
 
 void showhelpinfo(char *s)
 {    
-  cout<<"Usage:   "<<s<<" [-option] <input hex file> <output wav file>"<<endl;
-  cout<<"option:  "<<"--no-sound: no sound output                     "<<endl;
-  cout<<"         "<<"--no-file: no file output                       "<<endl;
-  cout<<"         "<<"--dump: output signal to stdout                 "<<endl;
-  cout<<"         "<<"--debug: show debug message                     "<<endl;
-  cout<<"example: "<<s<<" test.hex test.wav                           "<<endl;
-  cout<<"         "<<s<<" --debug test.hex                                    "<<endl<<endl;
+  cout<<"   Usage:   "<<s<<" [-option] <input hex file> <output wav file>"<<endl;
+  cout<<"   option:  "<<"--no-sound: no sound output                     "<<endl;
+  cout<<"            "<<"--no-file: no file output                       "<<endl;
+  cout<<"            "<<"--dump: output signal to stdout                 "<<endl;
+  cout<<"            "<<"--debug: show debug message                     "<<endl;
+  cout<<"   example: "<<s<<" test.hex test.wav                           "<<endl;
+  cout<<"            "<<s<<" --debug test.hex                                    "<<endl<<endl;
 }
 
 int main(int argc, char* argv[]) {
