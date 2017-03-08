@@ -46,7 +46,7 @@ public:
         /* Data Chunk */
         stream.write("data", 4);                                        // sGroupID (data)
         stream.write((const char*)&bufSize, 4);                         // Chunk size (of Data, and thus of bufferSize)
-        stream.write((const char*)&sig[0], bufSize);                        // The samples DATA!!!
+        stream.write((const char*)&sig[0], bufSize);                    // The samples DATA!!!
     }
 
 };
