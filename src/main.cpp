@@ -36,8 +36,8 @@ void showhelpinfo(char *s)
 void showDone()
 {
     string str ="\nHex2Wav done..\n\n"
-                 "    /\\___/\\\n"
-                 "   |       |\n"
+                 "    /\\___/\\     MI\n"
+                 "   |       |    MI\n"
                  "  _  *   *  _\n"
                  "  -   /_\\   -\n"
                  "      ---\n\n";
