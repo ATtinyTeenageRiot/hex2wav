@@ -18,7 +18,8 @@ OSFLAG = -D WIN -D__WINDOWS_DS__
 CFLAGS = -O3 -Wall -Wextra $(CFLAGS_EXTRA) $(MODULE_CFLAGS) -std=c++11 -static-libstdc++ -static-libgcc
 endif
                                 
-
+COMMIT_HASH=`git log --pretty=format:'%h' -n 1`
+DEFINES +=  -DBUILD_HASH=\"$(COMMIT_HASH)\"
 CC=g++
 SOURCES = main.cpp ../rtaudio-4.1.2/RtAudio.cpp
 INCLUDES = -I../rtaudio-4.1.2/

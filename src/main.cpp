@@ -8,12 +8,20 @@ string hex2wav_input_filename;
 string hex2wav_output_filename;
 
 /*funcion that show the help information*/
-void showhelpinfo(char *s)
+void showCreditInfo()
 {
+  cout<<"Hex2Wav build " << BUILD_HASH << " "<<endl;  
+  cout<<" Original Java code by Chris Haberer, Hex decoder by Fredrik Olofsson, C++ port by Budi Prakosa"<<endl;  
+  cout<<"  repo: https://github.com/ATtinyTeenageRiot/hex2wav"<<endl;
+  cout<<"  part of: https://github.com/8BitMixtape/8Bit-Mixtape-NEO"<<endl;
+}
+
+void showhelpinfo(char *s)
+{    
   cout<<"Usage:   "<<s<<" [-option] <input hex file> <output wav file>"<<endl;
   cout<<"option:  "<<"--no-sound: no sound output                     "<<endl;
   cout<<"         "<<"--no-file: no file output                       "<<endl;
-  cout<<"         "<<"--dump: output signal to stdout          "<<endl;
+  cout<<"         "<<"--dump: output signal to stdout                 "<<endl;
   cout<<"         "<<"--debug: show debug message                     "<<endl;
   cout<<"example: "<<s<<" test.hex test.wav                           "<<endl;
   cout<<"         "<<s<<" --debug test.hex                                    "<<endl<<endl;
@@ -34,6 +42,8 @@ int main(int argc, char* argv[]) {
     bool no_file = false;
     bool debug = false;
     bool dump = false;
+
+    if(!dump) showCreditInfo();
 
     while (arg_pointer < argc) {
       if (strcmp(argv[arg_pointer], "--no-sound") == 0) {
