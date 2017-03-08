@@ -61,7 +61,6 @@ int main(int argc, char* argv[]) {
     bool debug = false;
     bool dump = false;
 
-    if(!dump) showCreditInfo();
 
     while (arg_pointer < argc) {
       if (strcmp(argv[arg_pointer], "--no-sound") == 0) {
@@ -84,6 +83,8 @@ int main(int argc, char* argv[]) {
     }
 
     last_argc = arg_pointer - found_opt - 1;
+
+    if(!dump) showCreditInfo();
 
     if (last_argc == 1)
     {
@@ -123,7 +124,7 @@ int main(int argc, char* argv[]) {
     if (dump) {
         for (int i = 0; i < (int) hex_signal.size(); i++)
         {
-            printf("%f", hex_signal.at(i));
+            printf("%f\n", hex_signal.at(i));
         }
     }
 
