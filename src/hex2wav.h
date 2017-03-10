@@ -1,3 +1,15 @@
+/*
+ *
+    Wave Generator for audio bootloader (c) by Christoph Haberer 2011
+    HexDecoder in Javascript by Fredrik Olofsson
+    C++ port by Budi Prakosa
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+*/
+
 #ifndef HEX2WAV_H
 #define HEX2WAV_H
 

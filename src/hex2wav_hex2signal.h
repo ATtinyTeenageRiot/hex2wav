@@ -1,3 +1,17 @@
+/*
+ *
+    wave generator for audio bootloader
+
+    (c) -C-H-R-I-S-T-O-P-H-   -H-A-B-E-R-E-R- 2011
+
+    C++ port by Budi Prakosa
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+*/
+
 #ifndef HEX2SIGNAL_H
 #define HEX2SIGNAL_H
 
