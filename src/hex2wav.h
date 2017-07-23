@@ -21,7 +21,10 @@
 
 #define signal_type vector<float>
 
+#ifndef NORTAUDIO
 #include "hex2wav_signalplayer.h"
+#endif
+
 #include "hex2wav_bootframe.h"
 #include "hex2wav_hex2signal.h"
 #include "hex2wav_hexfiledecoder.h"

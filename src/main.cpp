@@ -49,7 +49,11 @@ int main(int argc, char* argv[]) {
 
     hexFileDecoder hexDec;
     WavCodeGenerator waveGen;
+
+    #ifndef NORTAUDIO
     SignalPlayer signalPlayer;
+    #endif
+
     SignalWriter signalWriter;
 
     int arg_pointer = 1;
@@ -119,7 +123,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (!no_file) signalWriter.writeWavFromSignal(hex_signal, hex2wav_output_filename);
+
+    #ifndef NORTAUDIO
     if (!no_sound) signalPlayer.playSignal(&hex_signal);
+    #endif
 
     if (dump) {
         for (int i = 0; i < (int) hex_signal.size(); i++)
