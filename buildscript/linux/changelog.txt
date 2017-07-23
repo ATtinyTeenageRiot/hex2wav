@@ -1,5 +1,5 @@
-commit 7a5cf53d61b94aad20522e848e7ad6b8de79b54a
-Author: xcorex <xcorex@MANTICORE.local>
-Date:   Sun Jul 23 15:15:07 2017 +0700
+commit 7a113a08ca75c03af8a49abb78c6e21565ed9a1f
+Author: Budi Prakosa <iyok@deadmediafm.org>
+Date:   Sun Jul 23 16:26:22 2017 +0700
 
-    no rtaudio for linux
+    disable pulse asound linux
