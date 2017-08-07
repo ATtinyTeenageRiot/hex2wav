@@ -10,7 +10,7 @@ STAGING_DIR="./tools/staging"
 
 
 DESTINATION_REPO="."
-COMMIT_HASH="7a113a08ca75c03af8a49abb78c6e21565ed9a1f"
+COMMIT_HASH="b566fc3e0d4558ba3dd76f7464f9d399ffaac279"
 
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'

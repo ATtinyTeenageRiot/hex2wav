@@ -12,7 +12,7 @@ STAGING_DIR="./tools/staging"
 
 DESTINATION_REPO="."
 
-COMMIT_HASH="HEAD"
+COMMIT_HASH="5d9bae1661961bc4f684596cb575b40f8a013def"
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'
 #cd "${REPO_DIR}/avrdude-6.0rc1"
@@ -26,6 +26,7 @@ pwd
 git clone ${REPO_URL}
 pwd
 cd ${REPO_DIR}
+rm -fr buildscript/windows
 git fetch --all
 git pull --all
 git checkout ${COMMIT_HASH}
