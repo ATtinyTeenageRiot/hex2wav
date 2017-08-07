@@ -29,8 +29,9 @@ void showhelpinfo(char *s)
   cout<<"            "<<"--no-file: no file output                       "<<endl;
   cout<<"            "<<"--dump: output signal to stdout                 "<<endl;
   cout<<"            "<<"--debug: show debug message                     "<<endl;
+  cout<<"            "<<"--dump-hex: show hex on console                 "<<endl;
   cout<<"   example: "<<s<<" test.hex test.wav                           "<<endl;
-  cout<<"            "<<s<<" --debug test.hex                                    "<<endl<<endl;
+  cout<<"            "<<s<<" --debug test.hex                            "<<endl<<endl;
 }
 
 void showDone()
@@ -64,6 +65,7 @@ int main(int argc, char* argv[]) {
     bool no_file = false;
     bool debug = false;
     bool dump = false;
+    bool dump_hex = false;
 
 
     while (arg_pointer < argc) {
@@ -81,6 +83,10 @@ int main(int argc, char* argv[]) {
       }
       if (strcmp(argv[arg_pointer], "--dump") == 0) {
             dump = true;
+            found_opt++;
+      }
+      if (strcmp(argv[arg_pointer], "--dump-hex") == 0) {
+            dump_hex = true;
             found_opt++;
       }
       arg_pointer += 1;
@@ -133,6 +139,29 @@ int main(int argc, char* argv[]) {
         {
             printf("%f\n", hex_signal.at(i));
         }
+    }
+
+
+    // Dump hex file, for web platform
+    if(dump_hex) {
+
+       ifstream inFile;
+       string x;
+
+       inFile.open(hex2wav_input_filename);
+
+       if (!inFile) {
+            cout << "Unable to open file";
+            exit(1); // terminate with error
+       }
+
+       cout << endl << ">>BEGIN_HEX<<" << endl;
+       while (inFile >> x) {
+           cout << x << "|" ;
+       }
+       cout << endl << ">>END_HEX<<" << endl;
+
+       inFile.close();
     }
 
 
