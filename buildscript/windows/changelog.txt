@@ -1,5 +1,5 @@
-commit 87ff1c005b1837016d22fb3596972c8113ac3520
+commit 64541e3a89d31284ba66462998d150cab75fdeca
 Author: Budi Prakosa <iyok@deadmediafm.org>
-Date:   Tue Jan 30 07:55:36 2018 +0700
+Date:   Tue Jan 30 15:57:44 2018 +0700
 
-    update windows build machine
+    add zip command param

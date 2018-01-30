@@ -1,5 +1,5 @@
-commit 430889b2fb0233acf0526629cf17fe900ee2567c
+commit 64541e3a89d31284ba66462998d150cab75fdeca
 Author: Budi Prakosa <iyok@deadmediafm.org>
-Date:   Tue Jan 30 11:30:29 2018 +0700
+Date:   Tue Jan 30 15:57:44 2018 +0700
 
-    fix suffix
+    add zip command param
