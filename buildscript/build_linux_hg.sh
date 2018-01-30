@@ -1,5 +1,5 @@
 #!/bin/bash
-REMOTE="root@162.242.146.78"
+REMOTE="root@119.9.77.73"
 PORT="22"
 
 cwd=$(pwd)
