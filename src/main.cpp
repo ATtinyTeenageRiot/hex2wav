@@ -165,7 +165,12 @@ int main(int argc, char* argv[]) {
     }
 
     if(!no_file) {
+
+        #ifdef ISLINUX
+        string command = "./zip -j ";
+        #else
         string command = "zip -j ";
+        #endif
         string zipout = hex2wav_input_filename;
         zipout.append(".zip");
         
