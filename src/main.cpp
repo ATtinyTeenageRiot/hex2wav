@@ -14,8 +14,9 @@ std::string get_selfpath() {
 
     ssize_t len = ::readlink(szTmp, buff, sizeof(buff)-1);
     if (len != -1) {
-      buff[len] = '\0';
-      return std::string(buff);
+    buff[len] = '\0';
+    string::size_type pos = string( buff ).find_last_of( "/" );
+    return string( buff ).substr( 0, pos);
     }
     /* handle error condition */
 }
