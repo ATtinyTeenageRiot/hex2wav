@@ -12,7 +12,7 @@ STAGING_DIR="./tools/staging"
 
 DESTINATION_REPO="."
 
-COMMIT_HASH="5d9bae1661961bc4f684596cb575b40f8a013def"
+COMMIT_HASH="87ff1c00"
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'
 #cd "${REPO_DIR}/avrdude-6.0rc1"
