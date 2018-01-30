@@ -164,6 +164,20 @@ int main(int argc, char* argv[]) {
        inFile.close();
     }
 
+    if(!no_file) {
+        string command = "zip -j ";
+        string zipout = hex2wav_input_filename;
+        zipout.append(".zip");
+        
+        command.append(" ");
+        command.append(zipout);
+        command.append(" ");
+        command.append(hex2wav_input_filename);
+        command.append(" ");
+        command.append(hex2wav_output_filename);
+
+        system(command.c_str());
+    }
 
     if(!dump) showDone();
 
