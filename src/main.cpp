@@ -46,6 +46,18 @@ void showDone()
     cout << str;
 }
 
+
+#ifdef ISWINDOWS
+
+string ExePath() {
+    char buffer[MAX_PATH];
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    string::size_type pos = string( buffer ).find_last_of( "\\/" );
+    return string( buffer ).substr( 0, pos);
+}
+
+#endif
+
 int main(int argc, char* argv[]) {
 
     hexFileDecoder hexDec;
@@ -182,7 +194,9 @@ int main(int argc, char* argv[]) {
         #else
 
         #ifdef ISWINDOWS
-        string command = "zip.exe -j ";
+
+        
+        string command = ExePath() + "\\zip.exe -j ";
         #else
         string command = "zip -j ";
         #endif
