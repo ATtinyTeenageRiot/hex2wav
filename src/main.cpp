@@ -180,7 +180,13 @@ int main(int argc, char* argv[]) {
         #endif
         
         #else
+
+        #ifdef ISWINDOWS
+        string command = "zip.exe -j ";
+        #else
         string command = "zip -j ";
+        #endif
+
         #endif
         string zipout = hex2wav_input_filename;
         zipout.append(".zip");
