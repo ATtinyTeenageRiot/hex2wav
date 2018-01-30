@@ -2,6 +2,35 @@
 #include <errno.h>
 #include "hex2wav.h"
 
+#ifdef ISLINUX
+
+#include <unistd.h>
+#include <limits.h>
+
+std::string get_selfpath() {
+    char buff[PATH_MAX];
+    ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
+    if (len != -1) {
+      buff[len] = '\0';
+      return std::string(buff);
+    }
+    /* handle error condition */
+}
+
+
+#endif
+
+#ifdef ISWINDOWS
+
+string ExePath() {
+    char buffer[MAX_PATH];
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    string::size_type pos = string( buffer ).find_last_of( "\\/" );
+    return string( buffer ).substr( 0, pos);
+}
+
+#endif
+
 using namespace std;
 
 string hex2wav_input_filename;
@@ -47,16 +76,7 @@ void showDone()
 }
 
 
-#ifdef ISWINDOWS
 
-string ExePath() {
-    char buffer[MAX_PATH];
-    GetModuleFileName( NULL, buffer, MAX_PATH );
-    string::size_type pos = string( buffer ).find_last_of( "\\/" );
-    return string( buffer ).substr( 0, pos);
-}
-
-#endif
 
 int main(int argc, char* argv[]) {
 
@@ -186,9 +206,9 @@ int main(int argc, char* argv[]) {
         #ifdef ISLINUX
 
         #ifdef LINUX64
-        string command = "./zip_64 -j ";
+        string command = get_selfpath() + "/zip_64 -j ";
         #else
-        string command = "./zip_32 -j ";
+        string command = get_selfpath() + "/zip_32 -j ";
         #endif
         
         #else
