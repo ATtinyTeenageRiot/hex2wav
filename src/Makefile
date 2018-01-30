@@ -1,10 +1,8 @@
 ifeq ($(shell uname), Linux)
 
-if [ `getconf LONG_BIT` = "64" ]
-then
-	LINUXBIT = -DLINUX64 
-fi
-
+ifeq ($(shell getconf LONG_BIT), 64)
+LINUXBIT = -DLINUX64
+endif
 LIBS =  -lpthread
 #  -lpulse-simple -lasound
 OSFLAG = -DLINUX
