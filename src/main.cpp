@@ -9,7 +9,10 @@
 
 std::string get_selfpath() {
     char buff[PATH_MAX];
-    ssize_t len = ::readlink("/proc/self/exe", buff, sizeof(buff)-1);
+    char szTmp[32];
+    sprintf(szTmp, "/proc/%d/exe", getpid());
+
+    ssize_t len = ::readlink(szTmp, buff, sizeof(buff)-1);
     if (len != -1) {
       buff[len] = '\0';
       return std::string(buff);
