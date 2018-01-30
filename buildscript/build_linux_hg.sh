@@ -1,17 +1,16 @@
 #!/bin/bash
-REMOTE="root@192.168.6.128"
+REMOTE="root@162.242.146.78"
 PORT="22"
 
 cwd=$(pwd)
 
 REPO_URL="https://github.com/ATtinyTeenageRiot/hex2wav.git"
-REPO_DIR="/root/hex2wav"
+REPO_DIR="~/hex2wav"
 STAGING_DIR="./tools/staging"
 
 
 DESTINATION_REPO="."
 COMMIT_HASH="430889b2"
-
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'
 #cd "${REPO_DIR}/avrdude-6.0rc1"
