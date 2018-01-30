@@ -1,5 +1,5 @@
 #!/bin/bash
-REMOTE="xcorex@172.16.225.134"
+REMOTE="xcorex@192.168.6.131"
 PORT="22"
 
 cwd=$(pwd)
@@ -19,8 +19,8 @@ COMMIT_HASH="5d9bae1661961bc4f684596cb575b40f8a013def"
 #./avrdude.exe -cusbasp -pt85 -C ./avrdude.conf
 #'"
 
-ssh ${REMOTE} -p ${PORT} bash -c "'
-. /opt/windows_32/bin/win-builds-switch 32  
+ssh ${REMOTE} -p ${PORT} /bin/bash -c "'
+source /opt/windows_32/bin/win-builds-switch  
 cd ~
 pwd                                                                                               
 git clone ${REPO_URL}
