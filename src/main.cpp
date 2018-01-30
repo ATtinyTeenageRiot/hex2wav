@@ -167,7 +167,13 @@ int main(int argc, char* argv[]) {
     if(!no_file) {
 
         #ifdef ISLINUX
-        string command = "./zip -j ";
+
+        #ifdef LINUX64
+        string command = "./zip_64 -j ";
+        #else
+        string command = "./zip_32 -j ";
+        #endif
+        
         #else
         string command = "zip -j ";
         #endif
