@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
     bool debug = false;
     bool dump = false;
     bool dump_hex = false;
+    bool zip_out = false;
 
 
     while (arg_pointer < argc) {
@@ -89,6 +90,10 @@ int main(int argc, char* argv[]) {
             dump_hex = true;
             found_opt++;
       }
+      if (strcmp(argv[arg_pointer], "--zip-out") == 0) {
+            zip_out = true;
+            found_opt++;
+      }      
       arg_pointer += 1;
     }
 
@@ -164,7 +169,7 @@ int main(int argc, char* argv[]) {
        inFile.close();
     }
 
-    if(!no_file) {
+    if(!no_file && zip_out) {
 
         #ifdef ISLINUX
 
