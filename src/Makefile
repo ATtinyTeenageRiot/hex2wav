@@ -2,6 +2,9 @@ ifeq ($(shell uname), Linux)
 
 ifeq ($(shell getconf LONG_BIT), 64)
 LINUXBIT = -DLINUX64
+EXE_SUFFIX = _64
+else
+EXE_SUFFIX = _32
 endif
 LIBS =  -lpthread
 #  -lpulse-simple -lasound
