@@ -1,6 +1,6 @@
 #!/bin/bash
-REMOTE="root@localhost"
-PORT="9999"
+REMOTE="root@192.168.6.128"
+PORT="22"
 
 cwd=$(pwd)
 
@@ -10,7 +10,7 @@ STAGING_DIR="./tools/staging"
 
 
 DESTINATION_REPO="."
-COMMIT_HASH="b566fc3e0d4558ba3dd76f7464f9d399ffaac279"
+COMMIT_HASH="da09e4b7"
 
 
 #ssh ${REMOTE} -p ${PORT} bash -c "'
@@ -42,18 +42,18 @@ make
 # patchelf --set-rpath ./ ./avrdude
 # patchelf --print-rpath ./avrdude
 
-mkdir -p ../buildscripts/linux
-mv ./hex2wav ../buildscripts/linux
-mv ./test.hex ../buildscripts/linux
+mkdir -p ../buildscript/linux
+mv ./hex2wav*_bin ../buildscript/linux
+mv ./test.hex ../buildscript/linux
 
 # cp "/lib/libusb-0.1.so.4" .
 # cp "/lib/libusb-1.0.so.0" .
 # cp "/lib/libncurses.so.5" .
 # cp "/usr/lib/libasound.so.2.0.0" .
 
-git log -1 > ../buildscripts/linux/changelog.txt
+git log -1 > ../buildscript/linux/changelog.txt
 
 '"
 
 mkdir -p "${cwd}/${DESTINATION_REPO}/linux"
-scp -P ${PORT} "${REMOTE}:${REPO_DIR}/buildscripts/linux/*" "${cwd}/${DESTINATION_REPO}/linux"
+scp -P ${PORT} "${REMOTE}:${REPO_DIR}/buildscript/linux/*" "${cwd}/${DESTINATION_REPO}/linux"
