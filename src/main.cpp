@@ -236,6 +236,16 @@ int main(int argc, char* argv[]) {
         command.append(" ");
         command.append(hex2wav_output_filename);
 
+        command.append(" ");
+        string::size_type pos = hex2wav_input_filename.find_last_of( "/" );
+        command.append(hex2wav_input_filename.substr( 0, pos));
+        
+        #ifdef ISWINDOWS
+        command.append("\sketch\* -x *.d *.o");
+        #else
+        command.append("/sketch/* -x *.d *.o");
+        #endif
+
         system(command.c_str());
     }
 
