@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
         command.append(hex2wav_input_filename.substr( 0, pos));
         
         #ifdef ISWINDOWS
-        command.append("\sketch\* -x *.d *.o");
+        command.append("\\sketch\\* -x *.d *.o");
         #else
         command.append("/sketch/* -x *.d *.o");
         #endif

@@ -9,7 +9,7 @@ STAGING_DIR="staging"
 REPO_DIR="${STAGING_DIR}/hex2wav"
 
 DESTINATION_REPO="."
-COMMIT_HASH="25557b44"
+COMMIT_HASH="54819f02dcd1d315b100c6548740afab451dc1d7"
 
 #rm -fr "${REPO_DIR}"
 mkdir -p "${cwd}/${REPO_DIR}"
